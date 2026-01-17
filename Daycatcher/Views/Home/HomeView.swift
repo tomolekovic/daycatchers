@@ -141,7 +141,7 @@ struct HomeView: View {
 
                 Spacer()
 
-                NavigationLink(destination: TimelineView()) {
+                NavigationLink(destination: MemoriesTimelineView()) {
                     Text("See All")
                         .font(themeManager.theme.captionFont)
                         .foregroundStyle(themeManager.theme.primaryColor)

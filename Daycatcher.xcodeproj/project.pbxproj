@@ -24,7 +24,7 @@
 		E01000001000000100000015 /* LovedOneDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000015 /* LovedOneDetailView.swift */; };
 		E01000001000000100000016 /* AddLovedOneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000016 /* AddLovedOneView.swift */; };
 		E01000001000000100000017 /* EditLovedOneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000017 /* EditLovedOneView.swift */; };
-		E01000001000000100000018 /* TimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000018 /* TimelineView.swift */; };
+		E01000001000000100000018 /* MemoriesTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000018 /* MemoriesTimelineView.swift */; };
 		E01000001000000100000019 /* MemoryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000019 /* MemoryDetailView.swift */; };
 		E01000001000000100000020 /* EditMemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000020 /* EditMemoryView.swift */; };
 		E01000001000000100000021 /* EventsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000021 /* EventsView.swift */; };
@@ -44,7 +44,7 @@
 		E02000001000000100000007 /* Event+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Event+CoreDataClass.swift"; sourceTree = "<group>"; };
 		E02000001000000100000008 /* Tag+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tag+CoreDataClass.swift"; sourceTree = "<group>"; };
 		E02000001000000100000009 /* WeeklyDigest+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WeeklyDigest+CoreDataClass.swift"; sourceTree = "<group>"; };
-		E02000001000000100000010 /* Daycatcher.xcdatamodeld */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodeld; path = Daycatcher.xcdatamodeld; sourceTree = "<group>"; };
+		E02000001000000100000030 /* Daycatcher.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Daycatcher.xcdatamodel; sourceTree = "<group>"; };
 		E02000001000000100000011 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 		E02000001000000100000012 /* MediaManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaManager.swift; sourceTree = "<group>"; };
 		E02000001000000100000013 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
@@ -52,7 +52,7 @@
 		E02000001000000100000015 /* LovedOneDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LovedOneDetailView.swift; sourceTree = "<group>"; };
 		E02000001000000100000016 /* AddLovedOneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddLovedOneView.swift; sourceTree = "<group>"; };
 		E02000001000000100000017 /* EditLovedOneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditLovedOneView.swift; sourceTree = "<group>"; };
-		E02000001000000100000018 /* TimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineView.swift; sourceTree = "<group>"; };
+		E02000001000000100000018 /* MemoriesTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoriesTimelineView.swift; sourceTree = "<group>"; };
 		E02000001000000100000019 /* MemoryDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryDetailView.swift; sourceTree = "<group>"; };
 		E02000001000000100000020 /* EditMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditMemoryView.swift; sourceTree = "<group>"; };
 		E02000001000000100000021 /* EventsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsView.swift; sourceTree = "<group>"; };
@@ -187,7 +187,7 @@
 		E05000001000000100000012 /* Timeline */ = {
 			isa = PBXGroup;
 			children = (
-				E02000001000000100000018 /* TimelineView.swift */,
+				E02000001000000100000018 /* MemoriesTimelineView.swift */,
 				E02000001000000100000019 /* MemoryDetailView.swift */,
 				E02000001000000100000020 /* EditMemoryView.swift */,
 			);
@@ -305,7 +305,7 @@
 				E01000001000000100000015 /* LovedOneDetailView.swift in Sources */,
 				E01000001000000100000016 /* AddLovedOneView.swift in Sources */,
 				E01000001000000100000017 /* EditLovedOneView.swift in Sources */,
-				E01000001000000100000018 /* TimelineView.swift in Sources */,
+				E01000001000000100000018 /* MemoriesTimelineView.swift in Sources */,
 				E01000001000000100000019 /* MemoryDetailView.swift in Sources */,
 				E01000001000000100000020 /* EditMemoryView.swift in Sources */,
 				E01000001000000100000021 /* EventsView.swift in Sources */,
@@ -537,8 +537,9 @@
 		E02000001000000100000010 /* Daycatcher.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
+				E02000001000000100000030 /* Daycatcher.xcdatamodel */,
 			);
-			currentVersion = "";
+			currentVersion = E02000001000000100000030 /* Daycatcher.xcdatamodel */;
 			path = Daycatcher.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

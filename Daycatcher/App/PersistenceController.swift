@@ -37,13 +37,40 @@ final class PersistenceController: ObservableObject {
     // MARK: - Initialization
 
     init(inMemory: Bool = false) {
-        container = NSPersistentCloudKitContainer(name: "Daycatcher")
+        // Explicitly load the managed object model from the bundle
+        guard let modelURL = Bundle.main.url(forResource: "Daycatcher", withExtension: "momd"),
+              let model = NSManagedObjectModel(contentsOf: modelURL) else {
+            // Fallback: try to load without .momd extension (development)
+            if let altURL = Bundle.main.url(forResource: "Daycatcher", withExtension: "mom"),
+               let altModel = NSManagedObjectModel(contentsOf: altURL) {
+                container = NSPersistentCloudKitContainer(name: "Daycatcher", managedObjectModel: altModel)
+            } else {
+                // Last resort: let the container find it
+                container = NSPersistentCloudKitContainer(name: "Daycatcher")
+            }
+
+            // Configure the persistent store description
+            guard let description = container.persistentStoreDescriptions.first else {
+                fatalError("Failed to retrieve persistent store description. Ensure Daycatcher.xcdatamodeld is added to the target.")
+            }
+
+            configureStore(description: description, inMemory: inMemory)
+            loadStore()
+            return
+        }
+
+        container = NSPersistentCloudKitContainer(name: "Daycatcher", managedObjectModel: model)
 
         // Configure the persistent store description
         guard let description = container.persistentStoreDescriptions.first else {
-            fatalError("Failed to retrieve persistent store description")
+            fatalError("Failed to retrieve persistent store description. Ensure Daycatcher.xcdatamodeld is added to the target.")
         }
 
+        configureStore(description: description, inMemory: inMemory)
+        loadStore()
+    }
+
+    private func configureStore(description: NSPersistentStoreDescription, inMemory: Bool) {
         if inMemory {
             description.url = URL(fileURLWithPath: "/dev/null")
             description.cloudKitContainerOptions = nil
@@ -59,7 +86,9 @@ final class PersistenceController: ObservableObject {
 
             description.cloudKitContainerOptions = cloudKitOptions
         }
+    }
 
+    private func loadStore() {
         // Load the persistent store
         container.loadPersistentStores { storeDescription, error in
             if let error = error as NSError? {

@@ -1,7 +1,7 @@
 import SwiftUI
 import CoreData
 
-struct TimelineView: View {
+struct MemoriesTimelineView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.managedObjectContext) private var viewContext
 
@@ -355,7 +355,7 @@ struct FilterSheet: View {
 }
 
 #Preview {
-    TimelineView()
+    MemoriesTimelineView()
         .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
         .environmentObject(ThemeManager())
 }

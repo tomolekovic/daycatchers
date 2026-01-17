@@ -36,7 +36,7 @@ struct ContentView: View {
                 }
                 .tag(Tab.lovedOnes)
 
-            TimelineView()
+            MemoriesTimelineView()
                 .tabItem {
                     Label(Tab.timeline.rawValue, systemImage: Tab.timeline.icon)
                 }
