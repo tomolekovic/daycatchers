@@ -11,6 +11,7 @@ struct LovedOneDetailView: View {
     @State private var selectedSegment: DetailSegment = .memories
     @State private var showingEditSheet = false
     @State private var showingDeleteAlert = false
+    @State private var captureType: MemoryType?
 
     enum DetailSegment: String, CaseIterable {
         case memories = "Memories"
@@ -73,6 +74,9 @@ struct LovedOneDetailView: View {
             }
         } message: {
             Text("This will permanently delete all memories and events associated with \(lovedOne.name ?? "this person").")
+        }
+        .sheet(item: $captureType) { type in
+            CaptureFlowContainer(memoryType: type, lovedOne: lovedOne)
         }
     }
 
@@ -162,10 +166,18 @@ struct LovedOneDetailView: View {
 
     private var quickCaptureSection: some View {
         HStack(spacing: themeManager.theme.spacingMedium) {
-            QuickCaptureButton(type: .photo, theme: themeManager.theme)
-            QuickCaptureButton(type: .video, theme: themeManager.theme)
-            QuickCaptureButton(type: .audio, theme: themeManager.theme)
-            QuickCaptureButton(type: .text, theme: themeManager.theme)
+            QuickCaptureButton(type: .photo, theme: themeManager.theme) {
+                captureType = .photo
+            }
+            QuickCaptureButton(type: .video, theme: themeManager.theme) {
+                captureType = .video
+            }
+            QuickCaptureButton(type: .audio, theme: themeManager.theme) {
+                captureType = .audio
+            }
+            QuickCaptureButton(type: .text, theme: themeManager.theme) {
+                captureType = .text
+            }
         }
         .padding()
         .background(themeManager.theme.surfaceColor)

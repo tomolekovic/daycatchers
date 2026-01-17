@@ -5,6 +5,7 @@ struct SettingsView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.managedObjectContext) private var viewContext
     @ObservedObject var persistenceController = PersistenceController.shared
+    @ObservedObject var syncManager = MediaSyncManager.shared
 
     @AppStorage("smartTaggingEnabled") private var smartTaggingEnabled = true
     @AppStorage("weeklyDigestsEnabled") private var weeklyDigestsEnabled = true
@@ -23,6 +24,9 @@ struct SettingsView: View {
 
                 // iCloud Sync
                 syncSection
+
+                // Media Sync
+                mediaSyncSection
 
                 // Family Sharing
                 familySharingSection
@@ -125,6 +129,91 @@ struct SettingsView: View {
             Text("iCloud & Sync")
         } footer: {
             Text("Your data is automatically synced across all your devices using iCloud.")
+        }
+    }
+
+    // MARK: - Media Sync Section
+
+    private var mediaSyncSection: some View {
+        Section {
+            // Media sync status row
+            HStack {
+                Image(systemName: "photo.on.rectangle.angled")
+                    .foregroundStyle(.purple)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Media Sync")
+
+                    if syncManager.pendingUploads > 0 {
+                        Text("\(syncManager.pendingUploads) pending upload\(syncManager.pendingUploads == 1 ? "" : "s")")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("All media synced")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                if syncManager.isUploading {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        ProgressView(value: syncManager.currentUploadProgress)
+                            .frame(width: 60)
+
+                        Text("\(Int(syncManager.currentUploadProgress * 100))%")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                } else if syncManager.pendingUploads == 0 {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                }
+            }
+
+            // Network status indicator
+            if !syncManager.isNetworkAvailable {
+                HStack {
+                    Image(systemName: "wifi.slash")
+                        .foregroundStyle(.orange)
+
+                    Text("No network connection")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            // Sync now button
+            if syncManager.pendingUploads > 0 {
+                Button(action: {
+                    Task {
+                        await syncManager.retryFailedUploads()
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                        Text("Sync Now")
+                    }
+                }
+                .disabled(syncManager.isUploading || !syncManager.isNetworkAvailable)
+            }
+
+            // Error display
+            if let error = syncManager.syncError {
+                HStack {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.red)
+
+                    Text(error.localizedDescription)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+            }
+        } header: {
+            Text("Media")
+        } footer: {
+            Text("Photos, videos, and audio are synced to iCloud so they're available on all your devices.")
         }
     }
 

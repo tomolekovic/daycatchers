@@ -32,7 +32,36 @@
 		E01000001000000100000023 /* AddEventView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000023 /* AddEventView.swift */; };
 		E01000001000000100000024 /* EditEventView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000024 /* EditEventView.swift */; };
 		E01000001000000100000025 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000025 /* SettingsView.swift */; };
+		E01000001000000100000026 /* PermissionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000026 /* PermissionsManager.swift */; };
+		E01000001000000100000027 /* PhotoCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000027 /* PhotoCaptureView.swift */; };
+		E01000001000000100000028 /* VideoCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000028 /* VideoCaptureView.swift */; };
+		E01000001000000100000029 /* AudioCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000029 /* AudioCaptureView.swift */; };
+		E01000001000000100000030 /* TextCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000031 /* TextCaptureView.swift */; };
+		E01000001000000100000032 /* CaptureFlowContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000032 /* CaptureFlowContainer.swift */; };
+		E01000001000000100000033 /* MediaSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000033 /* MediaSyncManager.swift */; };
+		E01000001000000100000034 /* SyncStatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000034 /* SyncStatusBadge.swift */; };
+		E0T000001000000100000001 /* EnumTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0T000002000000100000001 /* EnumTests.swift */; };
+		E0T000001000000100000002 /* MediaManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0T000002000000100000002 /* MediaManagerTests.swift */; };
+		E0T000001000000100000003 /* MediaSyncManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0T000002000000100000003 /* MediaSyncManagerTests.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		E0T000003000000100000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E09000001000000100000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E06000001000000100000001;
+			remoteInfo = Daycatcher;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		E0T000003000000100000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E06000001000000100000001 /* Daycatcher */;
+			targetProxy = E0T000003000000100000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXFileReference section */
 		E02000001000000100000001 /* DaycatcherApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaycatcherApp.swift; sourceTree = "<group>"; };
@@ -62,10 +91,29 @@
 		E02000001000000100000025 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		E03000001000000100000001 /* Daycatcher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Daycatcher.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E03000001000000100000002 /* Daycatcher.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Daycatcher.entitlements; sourceTree = "<group>"; };
+		E02000001000000100000026 /* PermissionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsManager.swift; sourceTree = "<group>"; };
+		E02000001000000100000027 /* PhotoCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCaptureView.swift; sourceTree = "<group>"; };
+		E02000001000000100000028 /* VideoCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCaptureView.swift; sourceTree = "<group>"; };
+		E02000001000000100000029 /* AudioCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCaptureView.swift; sourceTree = "<group>"; };
+		E02000001000000100000031 /* TextCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextCaptureView.swift; sourceTree = "<group>"; };
+		E02000001000000100000032 /* CaptureFlowContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureFlowContainer.swift; sourceTree = "<group>"; };
+		E0T000002000000100000001 /* EnumTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnumTests.swift; sourceTree = "<group>"; };
+		E0T000002000000100000002 /* MediaManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaManagerTests.swift; sourceTree = "<group>"; };
+		E0T000002000000100000003 /* MediaSyncManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSyncManagerTests.swift; sourceTree = "<group>"; };
+		E0T000004000000100000001 /* DaycatcherTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DaycatcherTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E02000001000000100000033 /* MediaSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSyncManager.swift; sourceTree = "<group>"; };
+		E02000001000000100000034 /* SyncStatusBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusBadge.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		E04000001000000100000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E0T000005000000100000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -79,8 +127,19 @@
 			isa = PBXGroup;
 			children = (
 				E05000001000000100000002 /* Daycatcher */,
+				E0T000006000000100000001 /* DaycatcherTests */,
 				E05000001000000100000003 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		E0T000006000000100000001 /* DaycatcherTests */ = {
+			isa = PBXGroup;
+			children = (
+				E0T000002000000100000001 /* EnumTests.swift */,
+				E0T000002000000100000002 /* MediaManagerTests.swift */,
+				E0T000002000000100000003 /* MediaSyncManagerTests.swift */,
+			);
+			path = DaycatcherTests;
 			sourceTree = "<group>";
 		};
 		E05000001000000100000002 /* Daycatcher */ = {
@@ -101,6 +160,7 @@
 			isa = PBXGroup;
 			children = (
 				E03000001000000100000001 /* Daycatcher.app */,
+				E0T000004000000100000001 /* DaycatcherTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -138,14 +198,29 @@
 				E05000001000000100000013 /* Events */,
 				E05000001000000100000014 /* Settings */,
 				E05000001000000100000015 /* Components */,
+				E05000001000000100000016 /* Capture */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		E05000001000000100000016 /* Capture */ = {
+			isa = PBXGroup;
+			children = (
+				E02000001000000100000027 /* PhotoCaptureView.swift */,
+				E02000001000000100000028 /* VideoCaptureView.swift */,
+				E02000001000000100000029 /* AudioCaptureView.swift */,
+				E02000001000000100000031 /* TextCaptureView.swift */,
+				E02000001000000100000032 /* CaptureFlowContainer.swift */,
+			);
+			path = Capture;
 			sourceTree = "<group>";
 		};
 		E05000001000000100000007 /* Services */ = {
 			isa = PBXGroup;
 			children = (
 				E02000001000000100000012 /* MediaManager.swift */,
+				E02000001000000100000033 /* MediaSyncManager.swift */,
+				E02000001000000100000026 /* PermissionsManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -216,6 +291,7 @@
 		E05000001000000100000015 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				E02000001000000100000034 /* SyncStatusBadge.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -240,6 +316,24 @@
 			productReference = E03000001000000100000001 /* Daycatcher.app */;
 			productType = "com.apple.product-type.application";
 		};
+		E0T000007000000100000001 /* DaycatcherTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E0T000008000000100000001 /* Build configuration list for PBXNativeTarget "DaycatcherTests" */;
+			buildPhases = (
+				E0T000009000000100000001 /* Sources */,
+				E0T000005000000100000001 /* Frameworks */,
+				E0T00000A000000100000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E0T000003000000100000002 /* PBXTargetDependency */,
+			);
+			name = DaycatcherTests;
+			productName = DaycatcherTests;
+			productReference = E0T000004000000100000001 /* DaycatcherTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -252,6 +346,10 @@
 				TargetAttributes = {
 					E06000001000000100000001 = {
 						CreatedOnToolsVersion = 15.0;
+					};
+					E0T000007000000100000001 = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = E06000001000000100000001;
 					};
 				};
 			};
@@ -269,12 +367,20 @@
 			projectRoot = "";
 			targets = (
 				E06000001000000100000001 /* Daycatcher */,
+				E0T000007000000100000001 /* DaycatcherTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		E07000001000000100000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E0T00000A000000100000001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -313,6 +419,24 @@
 				E01000001000000100000023 /* AddEventView.swift in Sources */,
 				E01000001000000100000024 /* EditEventView.swift in Sources */,
 				E01000001000000100000025 /* SettingsView.swift in Sources */,
+				E01000001000000100000026 /* PermissionsManager.swift in Sources */,
+				E01000001000000100000027 /* PhotoCaptureView.swift in Sources */,
+				E01000001000000100000028 /* VideoCaptureView.swift in Sources */,
+				E01000001000000100000029 /* AudioCaptureView.swift in Sources */,
+				E01000001000000100000030 /* TextCaptureView.swift in Sources */,
+				E01000001000000100000032 /* CaptureFlowContainer.swift in Sources */,
+				E01000001000000100000033 /* MediaSyncManager.swift in Sources */,
+				E01000001000000100000034 /* SyncStatusBadge.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E0T000009000000100000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E0T000001000000100000001 /* EnumTests.swift in Sources */,
+				E0T000001000000100000002 /* MediaManagerTests.swift in Sources */,
+				E0T000001000000100000003 /* MediaSyncManagerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -510,6 +634,48 @@
 			};
 			name = Release;
 		};
+		E0T00000B000000100000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.daycatcher.app.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Daycatcher.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Daycatcher";
+			};
+			name = Debug;
+		};
+		E0T00000B000000100000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.daycatcher.app.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Daycatcher.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Daycatcher";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -527,6 +693,15 @@
 			buildConfigurations = (
 				E0A000001000000100000001 /* Debug */,
 				E0A000001000000100000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E0T000008000000100000001 /* Build configuration list for PBXNativeTarget "DaycatcherTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E0T00000B000000100000001 /* Debug */,
+				E0T00000B000000100000002 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

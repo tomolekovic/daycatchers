@@ -82,6 +82,35 @@ public class LovedOne: NSManagedObject {
         guard let path = profileImagePath else { return nil }
         return MediaManager.shared.profileImageURL(filename: path)
     }
+
+    // MARK: - Profile Image Sync Status
+
+    /// Get/set the profile image sync status as an enum
+    var profileSyncStatus: MediaSyncStatus {
+        get {
+            MediaSyncStatus(rawValue: profileImageSyncStatus ?? "") ?? .pending
+        }
+        set {
+            profileImageSyncStatus = newValue.rawValue
+        }
+    }
+
+    /// Check if profile image is available locally
+    var isProfileImageAvailableLocally: Bool {
+        guard let path = profileImagePath else { return true }
+        let url = MediaManager.shared.profileImageURL(filename: path)
+        return FileManager.default.fileExists(atPath: url.path)
+    }
+
+    /// Check if profile image needs to be downloaded from CloudKit
+    var needsProfileImageDownload: Bool {
+        !isProfileImageAvailableLocally && cloudProfileImageRecordName != nil
+    }
+
+    /// Check if profile image needs to be uploaded to CloudKit
+    var needsProfileImageUpload: Bool {
+        isProfileImageAvailableLocally && cloudProfileImageRecordName == nil && profileSyncStatus != .localOnly
+    }
 }
 
 // MARK: - Core Data Properties Extension
@@ -101,6 +130,10 @@ extension LovedOne {
     @NSManaged public var createdAt: Date?
     @NSManaged public var memories: NSSet?
     @NSManaged public var events: NSSet?
+
+    // MARK: - Sync Properties
+    @NSManaged public var profileImageSyncStatus: String?
+    @NSManaged public var cloudProfileImageRecordName: String?
 }
 
 // MARK: - Generated Accessors for Memories

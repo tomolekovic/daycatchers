@@ -25,6 +25,10 @@ struct HomeView: View {
     )
     private var lovedOnes: FetchedResults<LovedOne>
 
+    @State private var captureType: MemoryType?
+    @State private var showLovedOnePicker = false
+    @State private var pendingCaptureType: MemoryType?
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -54,6 +58,25 @@ struct HomeView: View {
             }
             .background(themeManager.theme.backgroundColor)
             .navigationTitle("Home")
+            .sheet(item: $captureType) { type in
+                CaptureFlowContainer(memoryType: type, lovedOne: lovedOnes.first)
+            }
+            .sheet(isPresented: $showLovedOnePicker) {
+                LovedOnePickerSheet(lovedOnes: Array(lovedOnes)) { selected in
+                    if let type = pendingCaptureType {
+                        captureType = type
+                    }
+                }
+            }
+        }
+    }
+
+    private func startCapture(type: MemoryType) {
+        if lovedOnes.count > 1 {
+            pendingCaptureType = type
+            showLovedOnePicker = true
+        } else {
+            captureType = type
         }
     }
 
@@ -95,10 +118,18 @@ struct HomeView: View {
                 .foregroundStyle(themeManager.theme.textPrimary)
 
             HStack(spacing: themeManager.theme.spacingMedium) {
-                QuickCaptureButton(type: .photo, theme: themeManager.theme)
-                QuickCaptureButton(type: .video, theme: themeManager.theme)
-                QuickCaptureButton(type: .audio, theme: themeManager.theme)
-                QuickCaptureButton(type: .text, theme: themeManager.theme)
+                QuickCaptureButton(type: .photo, theme: themeManager.theme) {
+                    startCapture(type: .photo)
+                }
+                QuickCaptureButton(type: .video, theme: themeManager.theme) {
+                    startCapture(type: .video)
+                }
+                QuickCaptureButton(type: .audio, theme: themeManager.theme) {
+                    startCapture(type: .audio)
+                }
+                QuickCaptureButton(type: .text, theme: themeManager.theme) {
+                    startCapture(type: .text)
+                }
             }
         }
         .padding()
@@ -194,10 +225,11 @@ struct HomeView: View {
 struct QuickCaptureButton: View {
     let type: MemoryType
     let theme: Theme
+    var action: (() -> Void)?
 
     var body: some View {
         Button(action: {
-            // TODO: Implement capture action
+            action?()
         }) {
             VStack(spacing: theme.spacingSmall) {
                 Image(systemName: type.icon)
@@ -214,6 +246,43 @@ struct QuickCaptureButton: View {
             .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusSmall))
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Loved One Picker Sheet
+
+struct LovedOnePickerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var themeManager: ThemeManager
+
+    let lovedOnes: [LovedOne]
+    let onSelect: (LovedOne) -> Void
+
+    var body: some View {
+        NavigationStack {
+            List(lovedOnes) { lovedOne in
+                Button {
+                    onSelect(lovedOne)
+                    dismiss()
+                } label: {
+                    HStack {
+                        Image(systemName: lovedOne.relationshipType.icon)
+                            .foregroundStyle(themeManager.theme.primaryColor)
+                        Text(lovedOne.name ?? "Unknown")
+                            .foregroundStyle(themeManager.theme.textPrimary)
+                    }
+                }
+            }
+            .navigationTitle("Choose Person")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }
 

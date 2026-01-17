@@ -191,6 +191,62 @@ enum AgeStage: String, CaseIterable {
     }
 }
 
+// MARK: - Media Sync Status
+
+enum MediaSyncStatus: String, CaseIterable, Identifiable {
+    case pending = "pending"           // Queued for upload
+    case uploading = "uploading"       // Currently uploading
+    case synced = "synced"             // Successfully in CloudKit
+    case failed = "failed"             // Upload failed
+    case downloading = "downloading"   // Downloading from CloudKit
+    case localOnly = "local_only"      // Explicitly kept local (no cloud sync)
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .pending: return "Pending"
+        case .uploading: return "Uploading"
+        case .synced: return "Synced"
+        case .failed: return "Failed"
+        case .downloading: return "Downloading"
+        case .localOnly: return "Local Only"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .pending: return "clock"
+        case .uploading: return "arrow.up.circle"
+        case .synced: return "checkmark.icloud"
+        case .failed: return "exclamationmark.icloud"
+        case .downloading: return "arrow.down.circle"
+        case .localOnly: return "iphone"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .pending: return .orange
+        case .uploading: return .blue
+        case .synced: return .green
+        case .failed: return .red
+        case .downloading: return .blue
+        case .localOnly: return .gray
+        }
+    }
+
+    /// Whether this status indicates the sync is in progress
+    var isInProgress: Bool {
+        self == .uploading || self == .downloading
+    }
+
+    /// Whether this status indicates an action is needed
+    var needsAction: Bool {
+        self == .pending || self == .failed
+    }
+}
+
 // MARK: - Season (for auto-tagging)
 
 enum Season: String, CaseIterable {

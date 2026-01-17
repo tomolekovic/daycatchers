@@ -74,6 +74,62 @@ public class Memory: NSManagedObject {
         guard let date = captureDate else { return nil }
         return Season.season(for: date)
     }
+
+    // MARK: - Sync Status
+
+    /// Get/set the media sync status as an enum
+    var syncStatus: MediaSyncStatus {
+        get {
+            MediaSyncStatus(rawValue: mediaSyncStatus ?? "") ?? .pending
+        }
+        set {
+            mediaSyncStatus = newValue.rawValue
+        }
+    }
+
+    /// Get/set the thumbnail sync status as an enum
+    var thumbnailSyncStatusValue: MediaSyncStatus {
+        get {
+            MediaSyncStatus(rawValue: thumbnailSyncStatus ?? "") ?? .pending
+        }
+        set {
+            thumbnailSyncStatus = newValue.rawValue
+        }
+    }
+
+    /// Check if media file is available locally
+    var isMediaAvailableLocally: Bool {
+        guard let path = mediaPath else { return memoryType == .text }
+        let url = MediaManager.shared.mediaURL(filename: path, type: memoryType)
+        return FileManager.default.fileExists(atPath: url.path)
+    }
+
+    /// Check if thumbnail is available locally
+    var isThumbnailAvailableLocally: Bool {
+        guard let path = thumbnailPath else { return true }
+        let url = MediaManager.shared.thumbnailURL(filename: path)
+        return FileManager.default.fileExists(atPath: url.path)
+    }
+
+    /// Check if media needs to be downloaded from CloudKit
+    var needsMediaDownload: Bool {
+        !isMediaAvailableLocally && cloudAssetRecordName != nil
+    }
+
+    /// Check if thumbnail needs to be downloaded from CloudKit
+    var needsThumbnailDownload: Bool {
+        !isThumbnailAvailableLocally && cloudThumbnailRecordName != nil
+    }
+
+    /// Check if media needs to be uploaded to CloudKit
+    var needsMediaUpload: Bool {
+        isMediaAvailableLocally && cloudAssetRecordName == nil && syncStatus != .localOnly
+    }
+
+    /// Whether any sync operation is in progress
+    var isSyncing: Bool {
+        syncStatus.isInProgress || thumbnailSyncStatusValue.isInProgress
+    }
 }
 
 // MARK: - Core Data Properties Extension
@@ -99,6 +155,16 @@ extension Memory {
     @NSManaged public var lovedOne: LovedOne?
     @NSManaged public var linkedEvent: Event?
     @NSManaged public var tags: NSSet?
+
+    // MARK: - Sync Properties
+    @NSManaged public var mediaSyncStatus: String?
+    @NSManaged public var thumbnailSyncStatus: String?
+    @NSManaged public var cloudAssetRecordName: String?
+    @NSManaged public var cloudThumbnailRecordName: String?
+    @NSManaged public var lastSyncAttempt: Date?
+    @NSManaged public var syncErrorMessage: String?
+    @NSManaged public var mediaFileSize: Int64
+    @NSManaged public var uploadProgress: Double
 }
 
 // MARK: - Generated Accessors for Tags
