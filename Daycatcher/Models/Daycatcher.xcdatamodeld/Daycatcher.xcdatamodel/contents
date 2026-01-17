@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23231" systemVersion="24A335" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="YES" userDefinedModelVersionIdentifier="">
+    <entity name="Event" representedClassName="Event" syncable="YES">
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="eventType" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isAllDay" optional="YES" attributeType="Boolean" defaultValueString="YES" usesScalarValueType="YES"/>
+        <attribute name="notes" optional="YES" attributeType="String"/>
+        <attribute name="reminderOffset" optional="YES" attributeType="String"/>
+        <attribute name="title" optional="YES" attributeType="String"/>
+        <relationship name="linkedMemories" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Memory" inverseName="linkedEvent" inverseEntity="Memory"/>
+        <relationship name="lovedOne" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="LovedOne" inverseName="events" inverseEntity="LovedOne"/>
+    </entity>
+    <entity name="LovedOne" representedClassName="LovedOne" syncable="YES">
+        <attribute name="birthDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="gender" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isSharedWithFamily" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="profileImagePath" optional="YES" attributeType="String"/>
+        <attribute name="relationship" optional="YES" attributeType="String"/>
+        <relationship name="events" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Event" inverseName="lovedOne" inverseEntity="Event"/>
+        <relationship name="memories" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Memory" inverseName="lovedOne" inverseEntity="Memory"/>
+    </entity>
+    <entity name="Memory" representedClassName="Memory" syncable="YES">
+        <attribute name="captureDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="extractedText" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="latitude" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="locationName" optional="YES" attributeType="String"/>
+        <attribute name="longitude" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="mediaPath" optional="YES" attributeType="String"/>
+        <attribute name="notes" optional="YES" attributeType="String"/>
+        <attribute name="thumbnailPath" optional="YES" attributeType="String"/>
+        <attribute name="title" optional="YES" attributeType="String"/>
+        <attribute name="transcription" optional="YES" attributeType="String"/>
+        <attribute name="type" optional="YES" attributeType="String"/>
+        <relationship name="linkedEvent" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Event" inverseName="linkedMemories" inverseEntity="Event"/>
+        <relationship name="lovedOne" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="LovedOne" inverseName="memories" inverseEntity="LovedOne"/>
+        <relationship name="tags" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Tag" inverseName="memories" inverseEntity="Tag"/>
+    </entity>
+    <entity name="Tag" representedClassName="Tag" syncable="YES">
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isAIGenerated" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <relationship name="memories" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Memory" inverseName="tags" inverseEntity="Memory"/>
+    </entity>
+    <entity name="WeeklyDigest" representedClassName="WeeklyDigest" syncable="YES">
+        <attribute name="generatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="highlightedMemoryIDs" optional="YES" attributeType="Binary"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isRead" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="summary" optional="YES" attributeType="String"/>
+        <attribute name="weekStartDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+    </entity>
+</model>
