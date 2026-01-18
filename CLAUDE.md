@@ -50,6 +50,9 @@ Daycatcher/
 │       ├── DiscoveryCard.swift   # On This Day and Rediscover cards
 │       ├── SearchSuggestionsView.swift # Search suggestions overlay
 │       └── HighlightedText.swift # Search term highlighting
+│   └── Digests/                  # Weekly digest views
+│       ├── DigestsView.swift     # List of weekly digests
+│       └── DigestDetailView.swift # Single digest detail
 ├── Theme/
 │   └── ThemeManager.swift        # Theme system (colors, fonts, spacing)
 └── Services/
@@ -57,7 +60,10 @@ Daycatcher/
     ├── MediaSyncManager.swift    # CloudKit CKAsset upload/download
     ├── PermissionsManager.swift  # Camera/photo/microphone permissions
     ├── DiscoveryService.swift    # On This Day, Rediscover features
-    └── SearchHistoryManager.swift # Recent search history
+    ├── SearchHistoryManager.swift # Recent search history
+    ├── NotificationManager.swift # UserNotifications for reminders
+    ├── AITaggingService.swift    # Vision/NLP auto-tagging
+    └── DigestService.swift       # Weekly digest generation
 ```
 
 ## Build Commands
@@ -160,9 +166,23 @@ Capture → MediaManager (local save) → Core Data save
    - SearchHistoryManager for recent searches persistence
    - SearchSuggestionsView with people, tags, and recent searches
    - HighlightedText for search term highlighting
-5. 🔲 **Events & Reminders** - Milestone tracking, notifications
-6. 🔲 **Tags & AI** - Vision/NLP for auto-tagging
-7. 🔲 **Weekly Digests** - Auto-generated memory summaries
+5. ✅ **Events & Reminders** - Milestone tracking, notifications
+   - NotificationManager for iOS UserNotifications
+   - Event reminder scheduling with configurable offsets
+   - Birthday auto-notification with yearly recurrence
+   - Permission status UI in Settings
+6. ✅ **Tags & AI** - Vision/NLP for auto-tagging
+   - AITaggingService with Vision framework integration
+   - Image classification, face detection, text detection
+   - NaturalLanguage for text entity extraction
+   - Age stage, season, time-of-day tagging
+   - Manual tag management in MemoryDetailView
+7. ✅ **Weekly Digests** - Auto-generated memory summaries
+   - DigestService for weekly summary generation
+   - Smart memory highlighting (faces, duration, titles)
+   - DigestsView and DigestDetailView
+   - Unread digest card on HomeView
+   - Auto-generation on app launch
 8. 🔲 **Export & Backup** - PDF generation, local backup
 9. 🔲 **Offline Mode** - Conflict resolution, sync status UI improvements
 10. 🔲 **Family Sharing** - CKShare + UICloudSharingController (not yet implemented)

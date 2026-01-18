@@ -262,17 +262,22 @@ class AudioRecorder: NSObject, ObservableObject {
 
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
+            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetooth])
             try session.setActive(true)
 
             audioRecorder = try AVAudioRecorder(url: url, settings: settings)
-            audioRecorder?.record()
+            audioRecorder?.prepareToRecord()
 
-            isRecording = true
-            hasRecording = false
-            duration = 0
-
-            startTimer()
+            let started = audioRecorder?.record() ?? false
+            if started {
+                isRecording = true
+                hasRecording = false
+                duration = 0
+                startTimer()
+                print("Audio recording started successfully at: \(url)")
+            } else {
+                print("Failed to start audio recording")
+            }
         } catch {
             print("Failed to start recording: \(error)")
         }
@@ -280,9 +285,22 @@ class AudioRecorder: NSObject, ObservableObject {
 
     func stopRecording() {
         audioRecorder?.stop()
+
+        // Verify the recording file exists and has content
+        if let url = recordingURL {
+            do {
+                let attrs = try FileManager.default.attributesOfItem(atPath: url.path)
+                let fileSize = attrs[.size] as? Int64 ?? 0
+                print("Recording stopped. File size: \(fileSize) bytes at: \(url)")
+                hasRecording = fileSize > 0
+            } catch {
+                print("Error checking recording file: \(error)")
+                hasRecording = false
+            }
+        }
+
         audioRecorder = nil
         isRecording = false
-        hasRecording = true
         stopTimer()
     }
 

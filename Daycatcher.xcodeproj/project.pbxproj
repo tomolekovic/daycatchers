@@ -46,6 +46,11 @@
 		E01000001000000100000038 /* SearchHistoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000038 /* SearchHistoryManager.swift */; };
 		E01000001000000100000039 /* SearchSuggestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000039 /* SearchSuggestionsView.swift */; };
 		E01000001000000100000040 /* HighlightedText.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000040 /* HighlightedText.swift */; };
+		E01000001000000100000041 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000041 /* NotificationManager.swift */; };
+		E01000001000000100000042 /* AITaggingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000042 /* AITaggingService.swift */; };
+		E01000001000000100000043 /* DigestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000043 /* DigestService.swift */; };
+		E01000001000000100000044 /* DigestsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000044 /* DigestsView.swift */; };
+		E01000001000000100000045 /* DigestDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000045 /* DigestDetailView.swift */; };
 		E0T000001000000100000001 /* EnumTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0T000002000000100000001 /* EnumTests.swift */; };
 		E0T000001000000100000002 /* MediaManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0T000002000000100000002 /* MediaManagerTests.swift */; };
 		E0T000001000000100000003 /* MediaSyncManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0T000002000000100000003 /* MediaSyncManagerTests.swift */; };
@@ -101,6 +106,11 @@
 		E02000001000000100000038 /* SearchHistoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchHistoryManager.swift; sourceTree = "<group>"; };
 		E02000001000000100000039 /* SearchSuggestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchSuggestionsView.swift; sourceTree = "<group>"; };
 		E02000001000000100000040 /* HighlightedText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightedText.swift; sourceTree = "<group>"; };
+		E02000001000000100000041 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		E02000001000000100000042 /* AITaggingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AITaggingService.swift; sourceTree = "<group>"; };
+		E02000001000000100000043 /* DigestService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DigestService.swift; sourceTree = "<group>"; };
+		E02000001000000100000044 /* DigestsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DigestsView.swift; sourceTree = "<group>"; };
+		E02000001000000100000045 /* DigestDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DigestDetailView.swift; sourceTree = "<group>"; };
 		E03000001000000100000001 /* Daycatcher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Daycatcher.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E03000001000000100000002 /* Daycatcher.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Daycatcher.entitlements; sourceTree = "<group>"; };
 		E0T000002000000100000001 /* EnumTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnumTests.swift; sourceTree = "<group>"; };
@@ -190,6 +200,7 @@
 				E05000001000000100000011 /* LovedOnes */,
 				E05000001000000100000012 /* Timeline */,
 				E05000001000000100000013 /* Events */,
+				E05000001000000100000017 /* Digests */,
 				E05000001000000100000014 /* Settings */,
 				E05000001000000100000015 /* Components */,
 				E05000001000000100000016 /* Capture */,
@@ -197,11 +208,23 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
+		E05000001000000100000017 /* Digests */ = {
+			isa = PBXGroup;
+			children = (
+				E02000001000000100000044 /* DigestsView.swift */,
+				E02000001000000100000045 /* DigestDetailView.swift */,
+			);
+			path = Digests;
+			sourceTree = "<group>";
+		};
 		E05000001000000100000007 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				E02000001000000100000042 /* AITaggingService.swift */,
+				E02000001000000100000043 /* DigestService.swift */,
 				E02000001000000100000012 /* MediaManager.swift */,
 				E02000001000000100000033 /* MediaSyncManager.swift */,
+				E02000001000000100000041 /* NotificationManager.swift */,
 				E02000001000000100000026 /* PermissionsManager.swift */,
 				E02000001000000100000036 /* DiscoveryService.swift */,
 				E02000001000000100000038 /* SearchHistoryManager.swift */,
@@ -443,6 +466,11 @@
 				E01000001000000100000038 /* SearchHistoryManager.swift in Sources */,
 				E01000001000000100000039 /* SearchSuggestionsView.swift in Sources */,
 				E01000001000000100000040 /* HighlightedText.swift in Sources */,
+				E01000001000000100000041 /* NotificationManager.swift in Sources */,
+				E01000001000000100000042 /* AITaggingService.swift in Sources */,
+				E01000001000000100000043 /* DigestService.swift in Sources */,
+				E01000001000000100000044 /* DigestsView.swift in Sources */,
+				E01000001000000100000045 /* DigestDetailView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

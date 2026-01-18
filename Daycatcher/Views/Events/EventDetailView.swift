@@ -258,6 +258,9 @@ struct EventDetailView: View {
     // MARK: - Actions
 
     private func deleteEvent() {
+        // Cancel any scheduled notification for this event
+        NotificationManager.shared.cancelNotification(for: event)
+
         viewContext.delete(event)
 
         do {

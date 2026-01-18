@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreData
 import AVKit
+import CoreMedia
 
 struct MemoryDetailView: View {
     @EnvironmentObject var themeManager: ThemeManager
@@ -12,6 +13,9 @@ struct MemoryDetailView: View {
     @State private var showingEditSheet = false
     @State private var showingDeleteAlert = false
     @State private var showingShareSheet = false
+    @State private var showingAddTagSheet = false
+    @State private var newTagName = ""
+    @State private var isRetagging = false
 
     var body: some View {
         ScrollView {
@@ -44,10 +48,8 @@ struct MemoryDetailView: View {
                         }
                     }
 
-                    // Tags
-                    if !memory.tagsArray.isEmpty {
-                        tagsSection
-                    }
+                    // Tags (always show to allow adding)
+                    tagsSection
 
                     // Extracted Text
                     if let extractedText = memory.extractedText, !extractedText.isEmpty {
@@ -208,15 +210,26 @@ struct MemoryDetailView: View {
         }
     }
 
+    @State private var audioPlayer: AVAudioPlayer?
+    @State private var isPlayingAudio = false
+    @State private var audioProgress: Double = 0
+    @State private var audioDuration: TimeInterval = 0
+    @State private var audioTimer: Timer?
+
     private var audioView: some View {
         VStack(spacing: themeManager.theme.spacingMedium) {
             Image(systemName: "waveform")
                 .font(.system(size: 40))
                 .foregroundStyle(themeManager.theme.primaryColor)
 
+            // Duration display
+            Text(formatTime(audioDuration))
+                .font(.system(size: 32, weight: .light, design: .monospaced))
+                .foregroundStyle(themeManager.theme.textPrimary)
+
             HStack(spacing: themeManager.theme.spacingMedium) {
-                Button(action: {}) {
-                    Image(systemName: "play.fill")
+                Button(action: toggleAudioPlayback) {
+                    Image(systemName: isPlayingAudio ? "pause.fill" : "play.fill")
                         .font(.title2)
                         .foregroundStyle(.white)
                         .frame(width: 50, height: 50)
@@ -224,18 +237,118 @@ struct MemoryDetailView: View {
                         .clipShape(Circle())
                 }
 
-                // Progress placeholder
-                Capsule()
-                    .fill(themeManager.theme.surfaceColor)
-                    .frame(height: 6)
+                // Progress bar
+                GeometryReader { geometry in
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(themeManager.theme.surfaceColor.opacity(0.5))
+                            .frame(height: 6)
 
-                Text("0:00")
+                        Capsule()
+                            .fill(themeManager.theme.primaryColor)
+                            .frame(width: geometry.size.width * audioProgress, height: 6)
+                    }
+                }
+                .frame(height: 6)
+
+                // Current time / Total time
+                Text("\(formatTime(audioDuration * audioProgress)) / \(formatTime(audioDuration))")
                     .font(themeManager.theme.captionFont)
                     .foregroundStyle(themeManager.theme.textSecondary)
+                    .frame(width: 80)
             }
         }
         .padding()
         .background(themeManager.theme.surfaceColor)
+        .onAppear(perform: loadAudioDuration)
+        .onDisappear(perform: stopAudioPlayback)
+    }
+
+    private func toggleAudioPlayback() {
+        if isPlayingAudio {
+            stopAudioPlayback()
+        } else {
+            startAudioPlayback()
+        }
+    }
+
+    private func startAudioPlayback() {
+        guard let mediaPath = memory.mediaPath else { return }
+        let url = MediaManager.shared.mediaURL(filename: mediaPath, type: .audio)
+
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try AVAudioSession.sharedInstance().setActive(true)
+
+            audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayer?.prepareToPlay()
+            audioPlayer?.play()
+            isPlayingAudio = true
+
+            audioDuration = audioPlayer?.duration ?? 0
+
+            // Start timer for progress updates
+            audioTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+                if let player = audioPlayer {
+                    if player.isPlaying {
+                        audioProgress = player.currentTime / player.duration
+                    } else {
+                        stopAudioPlayback()
+                    }
+                }
+            }
+        } catch {
+            print("Failed to play audio: \(error)")
+        }
+    }
+
+    private func stopAudioPlayback() {
+        audioPlayer?.stop()
+        audioPlayer = nil
+        isPlayingAudio = false
+        audioTimer?.invalidate()
+        audioTimer = nil
+        audioProgress = 0
+    }
+
+    private func loadAudioDuration() {
+        guard let mediaPath = memory.mediaPath, memory.memoryType == .audio else {
+            print("loadAudioDuration: No media path or not audio type")
+            return
+        }
+        let url = MediaManager.shared.mediaURL(filename: mediaPath, type: .audio)
+        print("loadAudioDuration: Loading from \(url.path)")
+
+        // Check if file exists and its size
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            print("loadAudioDuration: File does not exist!")
+            return
+        }
+
+        // Use AVURLAsset to get duration - more reliable than AVAudioPlayer
+        let asset = AVURLAsset(url: url)
+        Task {
+            do {
+                let duration = try await asset.load(.duration)
+                let seconds = CMTimeGetSeconds(duration)
+                await MainActor.run {
+                    if seconds.isFinite && seconds > 0 {
+                        audioDuration = seconds
+                        print("loadAudioDuration: Duration = \(seconds) seconds")
+                    } else {
+                        print("loadAudioDuration: Invalid duration: \(seconds)")
+                    }
+                }
+            } catch {
+                print("Failed to load audio duration: \(error)")
+            }
+        }
+    }
+
+    private func formatTime(_ time: TimeInterval) -> String {
+        let minutes = Int(time) / 60
+        let seconds = Int(time) % 60
+        return String(format: "%d:%02d", minutes, seconds)
     }
 
     private var textView: some View {
@@ -309,26 +422,164 @@ struct MemoryDetailView: View {
 
     private var tagsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Tags")
-                .font(themeManager.theme.headlineFont)
-                .foregroundStyle(themeManager.theme.textPrimary)
+            HStack {
+                Text("Tags")
+                    .font(themeManager.theme.headlineFont)
+                    .foregroundStyle(themeManager.theme.textPrimary)
 
-            FlowLayout(spacing: 8) {
-                ForEach(memory.tagsArray) { tag in
-                    HStack(spacing: 4) {
-                        if tag.isAIGenerated {
+                Spacer()
+
+                // Re-analyze button
+                if memory.memoryType == .photo || memory.memoryType == .video {
+                    Button {
+                        reanalyzeWithAI()
+                    } label: {
+                        if isRetagging {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                        } else {
                             Image(systemName: "sparkles")
-                                .font(.caption2)
                         }
-                        Text(tag.name ?? "")
                     }
-                    .font(themeManager.theme.captionFont)
-                    .foregroundStyle(themeManager.theme.secondaryColor)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(themeManager.theme.secondaryColor.opacity(0.1))
-                    .clipShape(Capsule())
+                    .disabled(isRetagging)
                 }
+
+                // Add tag button
+                Button {
+                    showingAddTagSheet = true
+                } label: {
+                    Image(systemName: "plus.circle")
+                }
+            }
+
+            if memory.tagsArray.isEmpty {
+                Text("No tags yet. Tap + to add tags.")
+                    .font(themeManager.theme.captionFont)
+                    .foregroundStyle(themeManager.theme.textSecondary)
+                    .padding(.vertical, 8)
+            } else {
+                FlowLayout(spacing: 8) {
+                    ForEach(memory.tagsArray) { tag in
+                        tagChip(tag)
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showingAddTagSheet) {
+            addTagSheet
+        }
+    }
+
+    private func tagChip(_ tag: Tag) -> some View {
+        HStack(spacing: 4) {
+            if tag.isAIGenerated {
+                Image(systemName: "sparkles")
+                    .font(.caption2)
+            }
+            Text(tag.name ?? "")
+
+            // Remove button
+            Button {
+                removeTag(tag)
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.caption2)
+            }
+        }
+        .font(themeManager.theme.captionFont)
+        .foregroundStyle(tag.isAIGenerated ? themeManager.theme.primaryColor : themeManager.theme.secondaryColor)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background((tag.isAIGenerated ? themeManager.theme.primaryColor : themeManager.theme.secondaryColor).opacity(0.1))
+        .clipShape(Capsule())
+    }
+
+    private var addTagSheet: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Tag name", text: $newTagName)
+                        .autocorrectionDisabled()
+                }
+
+                Section {
+                    suggestedTagsView
+                } header: {
+                    Text("Suggestions")
+                }
+            }
+            .navigationTitle("Add Tag")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        newTagName = ""
+                        showingAddTagSheet = false
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") {
+                        addTag()
+                    }
+                    .disabled(newTagName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
+    private var suggestedTagsView: some View {
+        let suggestions = ["Birthday", "Holiday", "Vacation", "First", "Milestone", "Funny", "Sweet Moment", "Family", "Outdoors", "School"]
+
+        return FlowLayout(spacing: 8) {
+            ForEach(suggestions, id: \.self) { suggestion in
+                Button {
+                    newTagName = suggestion
+                } label: {
+                    Text(suggestion)
+                        .font(themeManager.theme.captionFont)
+                        .foregroundStyle(themeManager.theme.textPrimary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(themeManager.theme.surfaceColor)
+                        .clipShape(Capsule())
+                }
+            }
+        }
+    }
+
+    private func addTag() {
+        let trimmed = newTagName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        AITaggingService.shared.addTag(trimmed, to: memory, in: viewContext)
+        newTagName = ""
+        showingAddTagSheet = false
+    }
+
+    private func removeTag(_ tag: Tag) {
+        AITaggingService.shared.removeTag(tag, from: memory, in: viewContext)
+    }
+
+    private func reanalyzeWithAI() {
+        guard memory.memoryType == .photo || memory.memoryType == .video else { return }
+
+        isRetagging = true
+
+        Task {
+            // Load the image
+            var image: UIImage?
+
+            if memory.memoryType == .photo, let mediaPath = memory.mediaPath {
+                image = MediaManager.shared.loadImage(filename: mediaPath, type: .photo)
+            } else if memory.memoryType == .video, let thumbnailPath = memory.thumbnailPath {
+                image = MediaManager.shared.loadThumbnail(filename: thumbnailPath)
+            }
+
+            await AITaggingService.shared.tagMemory(memory, image: image, in: viewContext)
+
+            await MainActor.run {
+                isRetagging = false
             }
         }
     }
@@ -368,8 +619,30 @@ struct MemoryDetailView: View {
 
     // MARK: - Actions
 
+    @State private var isExtractingText = false
+
     private func extractText() {
-        // TODO: Implement OCR
+        guard memory.memoryType == .photo,
+              let mediaPath = memory.mediaPath,
+              let image = MediaManager.shared.loadImage(filename: mediaPath, type: .photo) else {
+            return
+        }
+
+        isExtractingText = true
+
+        Task {
+            if let extractedText = await AITaggingService.shared.extractText(from: image) {
+                await MainActor.run {
+                    memory.extractedText = extractedText
+                    try? viewContext.save()
+                    isExtractingText = false
+                }
+            } else {
+                await MainActor.run {
+                    isExtractingText = false
+                }
+            }
+        }
     }
 
     private func deleteMemory() {

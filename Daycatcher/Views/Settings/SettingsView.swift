@@ -1,8 +1,10 @@
 import SwiftUI
 import CoreData
+import UserNotifications
 
 struct SettingsView: View {
     @EnvironmentObject var themeManager: ThemeManager
+    @EnvironmentObject var notificationManager: NotificationManager
     @Environment(\.managedObjectContext) private var viewContext
     @ObservedObject var persistenceController = PersistenceController.shared
     @ObservedObject var syncManager = MediaSyncManager.shared
@@ -216,14 +218,136 @@ struct SettingsView: View {
     // MARK: - Reminders Section
 
     private var remindersSection: some View {
-        Section("Reminders") {
-            Toggle("Birthday Reminders", isOn: $birthdayRemindersEnabled)
+        Section {
+            // Notification permission status
+            HStack {
+                Image(systemName: "bell.fill")
+                    .foregroundStyle(notificationStatusColor)
 
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Notifications")
+
+                    Text(notificationStatusText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                notificationStatusIcon
+            }
+
+            // Open Settings button if denied
+            if notificationManager.authorizationStatus == .denied {
+                Button(action: {
+                    notificationManager.openSettings()
+                }) {
+                    HStack {
+                        Image(systemName: "gear")
+                        Text("Open Settings")
+                    }
+                }
+            }
+
+            // Request permission button if not determined
+            if notificationManager.authorizationStatus == .notDetermined {
+                Button(action: {
+                    Task {
+                        await notificationManager.requestAuthorization()
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "bell.badge")
+                        Text("Enable Notifications")
+                    }
+                }
+            }
+
+            // Birthday reminders toggle
+            Toggle("Birthday Reminders", isOn: $birthdayRemindersEnabled)
+                .disabled(notificationManager.authorizationStatus == .denied)
+
+            // Default reminder timing
             Picker("Default Reminder Timing", selection: $defaultReminderOffset) {
                 ForEach(ReminderOffset.allCases) { offset in
                     Text(offset.displayName).tag(offset.rawValue)
                 }
             }
+            .disabled(notificationManager.authorizationStatus == .denied)
+
+            // Pending notifications count
+            if notificationManager.pendingNotificationsCount > 0 {
+                HStack {
+                    Text("Scheduled Reminders")
+                    Spacer()
+                    Text("\(notificationManager.pendingNotificationsCount)")
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } header: {
+            Text("Reminders")
+        } footer: {
+            if notificationManager.authorizationStatus == .denied {
+                Text("Notifications are disabled. Enable them in Settings to receive event reminders.")
+            } else {
+                Text("You'll receive reminders before events and birthdays.")
+            }
+        }
+        .onAppear {
+            Task {
+                await notificationManager.refreshAuthorizationStatus()
+                await notificationManager.updatePendingCount()
+            }
+        }
+    }
+
+    // MARK: - Notification Status Helpers
+
+    private var notificationStatusColor: Color {
+        switch notificationManager.authorizationStatus {
+        case .authorized, .provisional, .ephemeral:
+            return .green
+        case .denied:
+            return .red
+        case .notDetermined:
+            return .orange
+        @unknown default:
+            return .gray
+        }
+    }
+
+    private var notificationStatusText: String {
+        switch notificationManager.authorizationStatus {
+        case .authorized:
+            return "Enabled"
+        case .provisional:
+            return "Provisional"
+        case .ephemeral:
+            return "Temporary"
+        case .denied:
+            return "Disabled"
+        case .notDetermined:
+            return "Not configured"
+        @unknown default:
+            return "Unknown"
+        }
+    }
+
+    @ViewBuilder
+    private var notificationStatusIcon: some View {
+        switch notificationManager.authorizationStatus {
+        case .authorized, .provisional, .ephemeral:
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+        case .denied:
+            Image(systemName: "xmark.circle.fill")
+                .foregroundStyle(.red)
+        case .notDetermined:
+            Image(systemName: "questionmark.circle.fill")
+                .foregroundStyle(.orange)
+        @unknown default:
+            Image(systemName: "circle.fill")
+                .foregroundStyle(.gray)
         }
     }
 
@@ -472,4 +596,5 @@ struct PDFExportView: View {
     SettingsView()
         .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
         .environmentObject(ThemeManager())
+        .environmentObject(NotificationManager.shared)
 }

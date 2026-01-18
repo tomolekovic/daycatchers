@@ -115,10 +115,34 @@ struct EditEventView: View {
 
         do {
             try viewContext.save()
+
+            // Update notification
+            updateNotification(for: event)
+
             dismiss()
         } catch {
             print("Error saving event: \(error)")
             isSaving = false
+        }
+    }
+
+    private func updateNotification(for event: Event) {
+        // Cancel existing notification
+        NotificationManager.shared.cancelNotification(for: event)
+
+        // Schedule new notification if reminder is set
+        guard reminderOffset != nil else { return }
+
+        Task {
+            // Request authorization if needed
+            if NotificationManager.shared.needsAuthorizationRequest {
+                let granted = await NotificationManager.shared.requestAuthorization()
+                if !granted { return }
+            }
+
+            guard NotificationManager.shared.isAuthorized else { return }
+
+            await NotificationManager.shared.scheduleNotification(for: event)
         }
     }
 }

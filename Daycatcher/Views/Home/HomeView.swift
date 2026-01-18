@@ -25,6 +25,13 @@ struct HomeView: View {
     )
     private var lovedOnes: FetchedResults<LovedOne>
 
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \WeeklyDigest.weekStartDate, ascending: false)],
+        predicate: NSPredicate(format: "isRead == NO"),
+        animation: .default
+    )
+    private var unreadDigests: FetchedResults<WeeklyDigest>
+
     @State private var captureType: MemoryType?
     @State private var showLovedOnePicker = false
     @State private var pendingCaptureType: MemoryType?
@@ -38,6 +45,11 @@ struct HomeView: View {
 
                     // Quick Capture
                     quickCaptureSection
+
+                    // Weekly Digest Card
+                    if let latestDigest = unreadDigests.first {
+                        weeklyDigestCard(latestDigest)
+                    }
 
                     // Discovery Section
                     if !recentMemories.isEmpty {
@@ -140,6 +152,52 @@ struct HomeView: View {
         .padding()
         .background(themeManager.theme.surfaceColor)
         .clipShape(RoundedRectangle(cornerRadius: themeManager.theme.cornerRadiusMedium))
+    }
+
+    // MARK: - Weekly Digest Card
+
+    private func weeklyDigestCard(_ digest: WeeklyDigest) -> some View {
+        NavigationLink(destination: DigestDetailView(digest: digest)) {
+            HStack(spacing: themeManager.theme.spacingMedium) {
+                // Icon
+                ZStack {
+                    Circle()
+                        .fill(themeManager.theme.primaryColor.opacity(0.15))
+                        .frame(width: 50, height: 50)
+
+                    Image(systemName: "doc.text.magnifyingglass")
+                        .font(.title2)
+                        .foregroundStyle(themeManager.theme.primaryColor)
+                }
+
+                // Content
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Weekly Digest")
+                            .font(themeManager.theme.headlineFont)
+                            .foregroundStyle(themeManager.theme.textPrimary)
+
+                        Circle()
+                            .fill(themeManager.theme.primaryColor)
+                            .frame(width: 8, height: 8)
+                    }
+
+                    Text(digest.formattedWeekRange)
+                        .font(themeManager.theme.captionFont)
+                        .foregroundStyle(themeManager.theme.textSecondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(themeManager.theme.textSecondary)
+            }
+            .padding()
+            .background(themeManager.theme.surfaceColor)
+            .clipShape(RoundedRectangle(cornerRadius: themeManager.theme.cornerRadiusMedium))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Discovery Section

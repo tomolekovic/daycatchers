@@ -9,12 +9,16 @@ struct CaptureFlowContainer: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
 
+    @AppStorage("smartTaggingEnabled") private var smartTaggingEnabled = true
+
     let memoryType: MemoryType
     let lovedOne: LovedOne?
 
     @State private var capturedMemory: Memory?
+    @State private var capturedImage: UIImage?
     @State private var showMetadataEditor = false
     @State private var isProcessing = false
+    @State private var processingMessage = "Saving..."
     @State private var errorMessage: String?
     @State private var showError = false
 
@@ -74,7 +78,7 @@ struct CaptureFlowContainer: View {
                     .scaleEffect(1.5)
                     .tint(.white)
 
-                Text("Saving...")
+                Text(processingMessage)
                     .font(themeManager.theme.headlineFont)
                     .foregroundStyle(.white)
             }
@@ -88,12 +92,23 @@ struct CaptureFlowContainer: View {
 
     private func savePhoto(_ image: UIImage) {
         isProcessing = true
+        processingMessage = "Saving..."
 
         Task {
             do {
                 let memory = try await savePhotoToMemory(image)
+
+                // Run AI tagging if enabled
+                if smartTaggingEnabled {
+                    await MainActor.run {
+                        processingMessage = "Analyzing..."
+                    }
+                    await AITaggingService.shared.tagMemory(memory, image: image, in: viewContext)
+                }
+
                 await MainActor.run {
                     capturedMemory = memory
+                    capturedImage = image
                     isProcessing = false
                     showMetadataEditor = true
                 }
@@ -109,10 +124,20 @@ struct CaptureFlowContainer: View {
 
     private func saveVideo(_ url: URL) {
         isProcessing = true
+        processingMessage = "Saving..."
 
         Task {
             do {
-                let memory = try await saveVideoToMemory(url)
+                let (memory, thumbnail) = try await saveVideoToMemory(url)
+
+                // Run AI tagging if enabled (use thumbnail for analysis)
+                if smartTaggingEnabled, let thumbnail = thumbnail {
+                    await MainActor.run {
+                        processingMessage = "Analyzing..."
+                    }
+                    await AITaggingService.shared.tagMemory(memory, image: thumbnail, in: viewContext)
+                }
+
                 await MainActor.run {
                     capturedMemory = memory
                     isProcessing = false
@@ -130,10 +155,20 @@ struct CaptureFlowContainer: View {
 
     private func saveAudio(_ url: URL) {
         isProcessing = true
+        processingMessage = "Saving..."
 
         Task {
             do {
                 let memory = try await saveAudioToMemory(url)
+
+                // Run AI tagging if enabled (no image, just metadata tags)
+                if smartTaggingEnabled {
+                    await MainActor.run {
+                        processingMessage = "Analyzing..."
+                    }
+                    await AITaggingService.shared.tagMemory(memory, in: viewContext)
+                }
+
                 await MainActor.run {
                     capturedMemory = memory
                     isProcessing = false
@@ -151,10 +186,20 @@ struct CaptureFlowContainer: View {
 
     private func saveText(content: String, title: String?) {
         isProcessing = true
+        processingMessage = "Saving..."
 
         Task {
             do {
                 let memory = try await saveTextToMemory(content: content, title: title)
+
+                // Run AI tagging if enabled (text analysis)
+                if smartTaggingEnabled {
+                    await MainActor.run {
+                        processingMessage = "Analyzing..."
+                    }
+                    await AITaggingService.shared.tagMemory(memory, in: viewContext)
+                }
+
                 await MainActor.run {
                     capturedMemory = memory
                     isProcessing = false
@@ -189,7 +234,7 @@ struct CaptureFlowContainer: View {
         )
     }
 
-    private func saveVideoToMemory(_ url: URL) async throws -> Memory {
+    private func saveVideoToMemory(_ url: URL) async throws -> (Memory, UIImage?) {
         // Save the video first
         guard let filename = MediaManager.shared.saveVideo(from: url) else {
             throw CaptureError.saveFailed
@@ -198,19 +243,23 @@ struct CaptureFlowContainer: View {
         // Generate thumbnail from the SAVED video (not temp file)
         let savedVideoURL = MediaManager.shared.mediaURL(filename: filename, type: .video)
         var thumbnailFilename: String?
+        var thumbnailImage: UIImage?
         if let thumbnail = MediaManager.shared.generateVideoThumbnail(from: savedVideoURL) {
             thumbnailFilename = MediaManager.shared.saveThumbnail(image: thumbnail)
+            thumbnailImage = thumbnail
         }
 
         // Clean up temp video file
         try? FileManager.default.removeItem(at: url)
 
         // Create memory record
-        return try await createMemory(
+        let memory = try await createMemory(
             type: .video,
             mediaPath: filename,
             thumbnailPath: thumbnailFilename
         )
+
+        return (memory, thumbnailImage)
     }
 
     private func saveAudioToMemory(_ url: URL) async throws -> Memory {

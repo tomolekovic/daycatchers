@@ -140,7 +140,25 @@ struct AddEventView: View {
     }
 
     private func scheduleReminder(for event: Event, offset: ReminderOffset) {
-        // TODO: Implement notification scheduling
+        Task {
+            // Request authorization if not determined
+            if NotificationManager.shared.needsAuthorizationRequest {
+                let granted = await NotificationManager.shared.requestAuthorization()
+                if !granted {
+                    print("Notification permission not granted")
+                    return
+                }
+            }
+
+            // Check if authorized
+            guard NotificationManager.shared.isAuthorized else {
+                print("Notifications not authorized")
+                return
+            }
+
+            // Schedule the notification
+            await NotificationManager.shared.scheduleNotification(for: event)
+        }
     }
 }
 

@@ -7,6 +7,8 @@ struct AddLovedOneView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
 
+    @AppStorage("birthdayRemindersEnabled") private var birthdayRemindersEnabled = true
+
     @State private var name = ""
     @State private var birthDate = Date()
     @State private var hasBirthDate = false
@@ -14,9 +16,9 @@ struct AddLovedOneView: View {
     @State private var gender: Gender?
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var profileImageData: Data?
-    @State private var isSharedWithFamily = false
 
     @State private var isSaving = false
+    @State private var createdBirthdayEvent: Event?
 
     private var isValid: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -58,15 +60,6 @@ struct AddLovedOneView: View {
                             Text(g.displayName).tag(g as Gender?)
                         }
                     }
-                }
-
-                // Sharing
-                Section {
-                    Toggle("Share with Family", isOn: $isSharedWithFamily)
-                } header: {
-                    Text("Family Sharing")
-                } footer: {
-                    Text("If enabled, family members will be able to see and add memories for \(name.isEmpty ? "this person" : name).")
                 }
             }
             .navigationTitle("Add Loved One")
@@ -145,7 +138,6 @@ struct AddLovedOneView: View {
         lovedOne.birthDate = hasBirthDate ? birthDate : nil
         lovedOne.relationship = relationship.rawValue
         lovedOne.gender = gender?.rawValue
-        lovedOne.isSharedWithFamily = isSharedWithFamily
         lovedOne.createdAt = Date()
 
         // Save profile image
@@ -158,11 +150,17 @@ struct AddLovedOneView: View {
 
         // Create birthday event if birth date exists
         if hasBirthDate {
-            createBirthdayEvent(for: lovedOne)
+            createdBirthdayEvent = createBirthdayEvent(for: lovedOne)
         }
 
         do {
             try viewContext.save()
+
+            // Schedule birthday notification if enabled
+            if let birthdayEvent = createdBirthdayEvent, birthdayRemindersEnabled {
+                scheduleBirthdayNotification(for: birthdayEvent)
+            }
+
             dismiss()
         } catch {
             print("Error saving loved one: \(error)")
@@ -170,7 +168,8 @@ struct AddLovedOneView: View {
         }
     }
 
-    private func createBirthdayEvent(for lovedOne: LovedOne) {
+    @discardableResult
+    private func createBirthdayEvent(for lovedOne: LovedOne) -> Event {
         let event = Event(context: viewContext)
         event.id = UUID()
         event.title = "\(lovedOne.name ?? "Birthday")'s Birthday"
@@ -183,6 +182,28 @@ struct AddLovedOneView: View {
         // Set date to next occurrence of birthday
         if let birthDate = lovedOne.birthDate {
             event.date = nextBirthday(from: birthDate)
+        }
+
+        return event
+    }
+
+    private func scheduleBirthdayNotification(for event: Event) {
+        Task {
+            // Request authorization if needed
+            if NotificationManager.shared.needsAuthorizationRequest {
+                let granted = await NotificationManager.shared.requestAuthorization()
+                if !granted {
+                    print("Notification permission not granted for birthday")
+                    return
+                }
+            }
+
+            guard NotificationManager.shared.isAuthorized else {
+                print("Notifications not authorized for birthday")
+                return
+            }
+
+            await NotificationManager.shared.scheduleNotification(for: event)
         }
     }
 
