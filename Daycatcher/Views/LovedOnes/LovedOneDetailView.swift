@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreData
+import CloudKit
 
 struct LovedOneDetailView: View {
     @EnvironmentObject var themeManager: ThemeManager
@@ -7,10 +8,13 @@ struct LovedOneDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     @ObservedObject var lovedOne: LovedOne
+    @StateObject private var sharingManager = SharingManager.shared
 
     @State private var selectedSegment: DetailSegment = .memories
     @State private var showingEditSheet = false
     @State private var showingDeleteAlert = false
+    @State private var showingShareSheet = false
+    @State private var showingStopSharingAlert = false
     @State private var captureType: MemoryType?
 
     enum DetailSegment: String, CaseIterable {
@@ -56,6 +60,24 @@ struct LovedOneDetailView: View {
                         Label("Edit", systemImage: "pencil")
                     }
 
+                    if sharingManager.isShared(lovedOne) {
+                        Button(action: { showingShareSheet = true }) {
+                            Label("Manage Sharing", systemImage: "person.2.badge.gearshape")
+                        }
+
+                        if sharingManager.isCurrentUserOwner(for: lovedOne) {
+                            Button(role: .destructive, action: { showingStopSharingAlert = true }) {
+                                Label("Stop Sharing", systemImage: "person.2.slash")
+                            }
+                        }
+                    } else {
+                        Button(action: { showingShareSheet = true }) {
+                            Label("Share with Family", systemImage: "person.2")
+                        }
+                    }
+
+                    Divider()
+
                     Button(role: .destructive, action: { showingDeleteAlert = true }) {
                         Label("Delete", systemImage: "trash")
                     }
@@ -77,6 +99,17 @@ struct LovedOneDetailView: View {
         }
         .sheet(item: $captureType) { type in
             CaptureFlowContainer(memoryType: type, lovedOne: lovedOne)
+        }
+        .sheet(isPresented: $showingShareSheet) {
+            CloudSharingControllerWrapper(lovedOne: lovedOne)
+        }
+        .alert("Stop Sharing?", isPresented: $showingStopSharingAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Stop Sharing", role: .destructive) {
+                stopSharing()
+            }
+        } message: {
+            Text("Family members will no longer be able to view or add memories for \(lovedOne.name ?? "this person").")
         }
     }
 
@@ -113,18 +146,45 @@ struct LovedOneDetailView: View {
                 StatView(title: "Events", count: lovedOne.eventCount, theme: themeManager.theme)
             }
 
-            // Sharing Badge
-            if lovedOne.isSharedWithFamily {
-                HStack(spacing: 4) {
-                    Image(systemName: "person.2.fill")
-                    Text("Shared with Family")
+            // Sharing Badge and Participants
+            if sharingManager.isShared(lovedOne) {
+                VStack(spacing: themeManager.theme.spacingSmall) {
+                    // Shared badge
+                    HStack(spacing: 4) {
+                        Image(systemName: "person.2.fill")
+                        Text("Shared with Family")
+                    }
+                    .font(themeManager.theme.captionFont)
+                    .foregroundStyle(themeManager.theme.secondaryColor)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(themeManager.theme.secondaryColor.opacity(0.1))
+                    .clipShape(Capsule())
+
+                    // Participant avatars
+                    let participants = sharingManager.participants(for: lovedOne)
+                    if participants.count > 1 {
+                        HStack(spacing: -8) {
+                            ForEach(participants.prefix(5), id: \.userIdentity.userRecordID) { participant in
+                                ParticipantAvatar(participant: participant)
+                            }
+                            if participants.count > 5 {
+                                Circle()
+                                    .fill(themeManager.theme.surfaceColor)
+                                    .frame(width: 28, height: 28)
+                                    .overlay {
+                                        Text("+\(participants.count - 5)")
+                                            .font(.caption2)
+                                            .fontWeight(.medium)
+                                            .foregroundStyle(themeManager.theme.textSecondary)
+                                    }
+                                    .overlay {
+                                        Circle().stroke(Color.white, lineWidth: 2)
+                                    }
+                            }
+                        }
+                    }
                 }
-                .font(themeManager.theme.captionFont)
-                .foregroundStyle(themeManager.theme.secondaryColor)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(themeManager.theme.secondaryColor.opacity(0.1))
-                .clipShape(Capsule())
             }
         }
         .padding()
@@ -296,6 +356,60 @@ struct LovedOneDetailView: View {
             print("Error deleting loved one: \(error)")
         }
     }
+
+    private func stopSharing() {
+        Task {
+            do {
+                try await sharingManager.stopSharing(lovedOne)
+            } catch {
+                print("Error stopping share: \(error)")
+            }
+        }
+    }
+}
+
+// MARK: - Participant Avatar
+
+struct ParticipantAvatar: View {
+    let participant: CKShare.Participant
+    @EnvironmentObject var themeManager: ThemeManager
+
+    var body: some View {
+        Circle()
+            .fill(avatarColor)
+            .frame(width: 28, height: 28)
+            .overlay {
+                Text(initials)
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+            }
+            .overlay {
+                Circle().stroke(Color.white, lineWidth: 2)
+            }
+    }
+
+    private var avatarColor: Color {
+        switch participant.role {
+        case .owner:
+            return .blue
+        case .privateUser:
+            return .green
+        case .publicUser:
+            return .orange
+        @unknown default:
+            return .gray
+        }
+    }
+
+    private var initials: String {
+        if let components = participant.userIdentity.nameComponents {
+            let first = components.givenName?.prefix(1) ?? ""
+            let last = components.familyName?.prefix(1) ?? ""
+            return String(first + last).uppercased()
+        }
+        return "?"
+    }
 }
 
 // MARK: - Stat View
@@ -326,30 +440,52 @@ struct MemoryThumbnail: View {
     let theme: Theme
 
     var body: some View {
-        ZStack {
-            Rectangle()
-                .fill(theme.surfaceColor)
+        GeometryReader { geometry in
+            ZStack {
+                Rectangle()
+                    .fill(theme.surfaceColor)
 
-            Image(systemName: memory.memoryType.icon)
-                .font(.title2)
-                .foregroundStyle(memory.memoryType.color.opacity(0.5))
-
-            // Type indicator
-            VStack {
-                Spacer()
-                HStack {
-                    Spacer()
+                // Try to load the thumbnail image
+                if let thumbnailPath = memory.thumbnailPath,
+                   let image = MediaManager.shared.loadThumbnail(filename: thumbnailPath) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geometry.size.width, height: geometry.size.width)
+                } else if memory.memoryType == .photo,
+                          let mediaPath = memory.mediaPath,
+                          let image = MediaManager.shared.loadImage(filename: mediaPath, type: .photo) {
+                    // Fallback: load full image if thumbnail missing
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geometry.size.width, height: geometry.size.width)
+                } else {
+                    // Placeholder icon for non-image types or missing media
                     Image(systemName: memory.memoryType.icon)
-                        .font(.caption2)
-                        .foregroundStyle(.white)
-                        .padding(4)
-                        .background(memory.memoryType.color.opacity(0.8))
-                        .clipShape(Circle())
-                        .padding(4)
+                        .font(.title2)
+                        .foregroundStyle(memory.memoryType.color.opacity(0.5))
+                }
+
+                // Type indicator
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Image(systemName: memory.memoryType.icon)
+                            .font(.caption2)
+                            .foregroundStyle(.white)
+                            .padding(4)
+                            .background(memory.memoryType.color.opacity(0.8))
+                            .clipShape(Circle())
+                            .padding(4)
+                    }
                 }
             }
+            .frame(width: geometry.size.width, height: geometry.size.width)
+            .clipped()
         }
-        .aspectRatio(1, contentMode: .fill)
+        .aspectRatio(1, contentMode: .fit)
     }
 }
 
