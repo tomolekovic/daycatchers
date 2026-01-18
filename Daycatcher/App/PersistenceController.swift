@@ -137,51 +137,6 @@ final class PersistenceController: ObservableObject {
         }
     }
 
-    // MARK: - CloudKit Sharing Support
-
-    /// Returns the CKShare for a given managed object, if it exists
-    func share(for object: NSManagedObject) -> CKShare? {
-        guard let persistentStore = object.objectID.persistentStore else { return nil }
-
-        do {
-            let shares = try container.fetchShares(matching: [object.objectID])
-            return shares[object.objectID]
-        } catch {
-            print("Failed to fetch share: \(error)")
-            return nil
-        }
-    }
-
-    /// Creates or returns existing share for a managed object
-    func getOrCreateShare(for object: NSManagedObject) async throws -> (CKShare, CKContainer) {
-        let (objectIDs, share, ckContainer) = try await container.share([object], to: nil)
-        return (share, ckContainer)
-    }
-
-    /// Check if an object is shared
-    func isShared(object: NSManagedObject) -> Bool {
-        isShared(objectID: object.objectID)
-    }
-
-    func isShared(objectID: NSManagedObjectID) -> Bool {
-        var isShared = false
-        if let persistentStore = objectID.persistentStore {
-            do {
-                let shares = try container.fetchShares(matching: [objectID])
-                isShared = shares.first != nil
-            } catch {
-                print("Failed to fetch shares: \(error)")
-            }
-        }
-        return isShared
-    }
-
-    /// Returns participants for a shared object
-    func participants(for object: NSManagedObject) -> [CKShare.Participant] {
-        guard let share = share(for: object) else { return [] }
-        return Array(share.participants)
-    }
-
     // MARK: - Preview Support
 
     static var preview: PersistenceController = {

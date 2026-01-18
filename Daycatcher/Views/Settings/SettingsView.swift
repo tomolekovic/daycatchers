@@ -12,7 +12,6 @@ struct SettingsView: View {
     @AppStorage("birthdayRemindersEnabled") private var birthdayRemindersEnabled = true
     @AppStorage("defaultReminderOffset") private var defaultReminderOffset = ReminderOffset.oneDay.rawValue
 
-    @State private var showingFamilySheet = false
     @State private var showingExportSheet = false
     @State private var showingBackupSheet = false
 
@@ -27,9 +26,6 @@ struct SettingsView: View {
 
                 // Media Sync
                 mediaSyncSection
-
-                // Family Sharing
-                familySharingSection
 
                 // Reminders
                 remindersSection
@@ -217,35 +213,6 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Family Sharing Section
-
-    private var familySharingSection: some View {
-        Section {
-            Button(action: { showingFamilySheet = true }) {
-                HStack {
-                    Image(systemName: "person.2.fill")
-                        .foregroundStyle(themeManager.theme.primaryColor)
-
-                    Text("Manage Family")
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .foregroundStyle(themeManager.theme.textPrimary)
-        } header: {
-            Text("Family Sharing")
-        } footer: {
-            Text("Share specific loved ones with family members so everyone can contribute memories.")
-        }
-        .sheet(isPresented: $showingFamilySheet) {
-            FamilySharingView()
-        }
-    }
-
     // MARK: - Reminders Section
 
     private var remindersSection: some View {
@@ -416,56 +383,6 @@ struct DataStatsRow: View {
                 Spacer()
                 Text(MediaManager.shared.formattedStorageUsed())
                     .foregroundStyle(.secondary)
-            }
-        }
-    }
-}
-
-// MARK: - Family Sharing View
-
-struct FamilySharingView: View {
-    @EnvironmentObject var themeManager: ThemeManager
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: themeManager.theme.spacingLarge) {
-                Spacer()
-
-                Image(systemName: "person.2.fill")
-                    .font(.system(size: 60))
-                    .foregroundStyle(themeManager.theme.primaryColor.opacity(0.5))
-
-                Text("Family Sharing")
-                    .font(themeManager.theme.titleFont)
-
-                Text("Create a family group to share memories of your loved ones with family members.")
-                    .font(themeManager.theme.bodyFont)
-                    .foregroundStyle(themeManager.theme.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-
-                Button(action: {}) {
-                    Text("Create Family")
-                        .font(themeManager.theme.headlineFont)
-                        .foregroundStyle(.white)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(themeManager.theme.primaryColor)
-                        .clipShape(RoundedRectangle(cornerRadius: themeManager.theme.cornerRadiusMedium))
-                }
-                .padding(.horizontal, 40)
-
-                Spacer()
-            }
-            .navigationTitle("Family Sharing")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
             }
         }
     }

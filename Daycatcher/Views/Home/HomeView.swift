@@ -182,7 +182,10 @@ struct HomeView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: themeManager.theme.spacingMedium) {
                     ForEach(Array(recentMemories.prefix(10))) { memory in
-                        RecentMemoryCard(memory: memory, theme: themeManager.theme)
+                        NavigationLink(destination: MemoryDetailView(memory: memory)) {
+                            RecentMemoryCard(memory: memory, theme: themeManager.theme)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -337,16 +340,30 @@ struct RecentMemoryCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: theme.spacingSmall) {
-            // Thumbnail placeholder
+            // Thumbnail
             ZStack {
                 RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
                     .fill(theme.surfaceColor)
 
-                Image(systemName: memory.memoryType.icon)
-                    .font(.largeTitle)
-                    .foregroundStyle(memory.memoryType.color.opacity(0.5))
+                if let thumbnailPath = memory.thumbnailPath,
+                   let image = MediaManager.shared.loadThumbnail(filename: thumbnailPath) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                } else if memory.memoryType == .photo,
+                          let mediaPath = memory.mediaPath,
+                          let image = MediaManager.shared.loadImage(filename: mediaPath, type: .photo) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Image(systemName: memory.memoryType.icon)
+                        .font(.largeTitle)
+                        .foregroundStyle(memory.memoryType.color.opacity(0.5))
+                }
             }
             .frame(width: 120, height: 120)
+            .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusSmall))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(memory.title ?? "Memory")

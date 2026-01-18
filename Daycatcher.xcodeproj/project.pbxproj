@@ -55,14 +55,6 @@
 		};
 /* End PBXContainerItemProxy section */
 
-/* Begin PBXTargetDependency section */
-		E0T000003000000100000002 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = E06000001000000100000001 /* Daycatcher */;
-			targetProxy = E0T000003000000100000001 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin PBXFileReference section */
 		E02000001000000100000001 /* DaycatcherApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaycatcherApp.swift; sourceTree = "<group>"; };
 		E02000001000000100000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -73,7 +65,6 @@
 		E02000001000000100000007 /* Event+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Event+CoreDataClass.swift"; sourceTree = "<group>"; };
 		E02000001000000100000008 /* Tag+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tag+CoreDataClass.swift"; sourceTree = "<group>"; };
 		E02000001000000100000009 /* WeeklyDigest+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WeeklyDigest+CoreDataClass.swift"; sourceTree = "<group>"; };
-		E02000001000000100000030 /* Daycatcher.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Daycatcher.xcdatamodel; sourceTree = "<group>"; };
 		E02000001000000100000011 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 		E02000001000000100000012 /* MediaManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaManager.swift; sourceTree = "<group>"; };
 		E02000001000000100000013 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
@@ -89,20 +80,21 @@
 		E02000001000000100000023 /* AddEventView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEventView.swift; sourceTree = "<group>"; };
 		E02000001000000100000024 /* EditEventView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditEventView.swift; sourceTree = "<group>"; };
 		E02000001000000100000025 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		E03000001000000100000001 /* Daycatcher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Daycatcher.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		E03000001000000100000002 /* Daycatcher.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Daycatcher.entitlements; sourceTree = "<group>"; };
 		E02000001000000100000026 /* PermissionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsManager.swift; sourceTree = "<group>"; };
 		E02000001000000100000027 /* PhotoCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCaptureView.swift; sourceTree = "<group>"; };
 		E02000001000000100000028 /* VideoCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCaptureView.swift; sourceTree = "<group>"; };
 		E02000001000000100000029 /* AudioCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCaptureView.swift; sourceTree = "<group>"; };
+		E02000001000000100000030 /* Daycatcher.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Daycatcher.xcdatamodel; sourceTree = "<group>"; };
 		E02000001000000100000031 /* TextCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextCaptureView.swift; sourceTree = "<group>"; };
 		E02000001000000100000032 /* CaptureFlowContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureFlowContainer.swift; sourceTree = "<group>"; };
+		E02000001000000100000033 /* MediaSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSyncManager.swift; sourceTree = "<group>"; };
+		E02000001000000100000034 /* SyncStatusBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusBadge.swift; sourceTree = "<group>"; };
+		E03000001000000100000001 /* Daycatcher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Daycatcher.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E03000001000000100000002 /* Daycatcher.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Daycatcher.entitlements; sourceTree = "<group>"; };
 		E0T000002000000100000001 /* EnumTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnumTests.swift; sourceTree = "<group>"; };
 		E0T000002000000100000002 /* MediaManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaManagerTests.swift; sourceTree = "<group>"; };
 		E0T000002000000100000003 /* MediaSyncManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSyncManagerTests.swift; sourceTree = "<group>"; };
 		E0T000004000000100000001 /* DaycatcherTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DaycatcherTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		E02000001000000100000033 /* MediaSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSyncManager.swift; sourceTree = "<group>"; };
-		E02000001000000100000034 /* SyncStatusBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusBadge.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -130,16 +122,6 @@
 				E0T000006000000100000001 /* DaycatcherTests */,
 				E05000001000000100000003 /* Products */,
 			);
-			sourceTree = "<group>";
-		};
-		E0T000006000000100000001 /* DaycatcherTests */ = {
-			isa = PBXGroup;
-			children = (
-				E0T000002000000100000001 /* EnumTests.swift */,
-				E0T000002000000100000002 /* MediaManagerTests.swift */,
-				E0T000002000000100000003 /* MediaSyncManagerTests.swift */,
-			);
-			path = DaycatcherTests;
 			sourceTree = "<group>";
 		};
 		E05000001000000100000002 /* Daycatcher */ = {
@@ -201,18 +183,6 @@
 				E05000001000000100000016 /* Capture */,
 			);
 			path = Views;
-			sourceTree = "<group>";
-		};
-		E05000001000000100000016 /* Capture */ = {
-			isa = PBXGroup;
-			children = (
-				E02000001000000100000027 /* PhotoCaptureView.swift */,
-				E02000001000000100000028 /* VideoCaptureView.swift */,
-				E02000001000000100000029 /* AudioCaptureView.swift */,
-				E02000001000000100000031 /* TextCaptureView.swift */,
-				E02000001000000100000032 /* CaptureFlowContainer.swift */,
-			);
-			path = Capture;
 			sourceTree = "<group>";
 		};
 		E05000001000000100000007 /* Services */ = {
@@ -294,6 +264,28 @@
 				E02000001000000100000034 /* SyncStatusBadge.swift */,
 			);
 			path = Components;
+			sourceTree = "<group>";
+		};
+		E05000001000000100000016 /* Capture */ = {
+			isa = PBXGroup;
+			children = (
+				E02000001000000100000027 /* PhotoCaptureView.swift */,
+				E02000001000000100000028 /* VideoCaptureView.swift */,
+				E02000001000000100000029 /* AudioCaptureView.swift */,
+				E02000001000000100000031 /* TextCaptureView.swift */,
+				E02000001000000100000032 /* CaptureFlowContainer.swift */,
+			);
+			path = Capture;
+			sourceTree = "<group>";
+		};
+		E0T000006000000100000001 /* DaycatcherTests */ = {
+			isa = PBXGroup;
+			children = (
+				E0T000002000000100000001 /* EnumTests.swift */,
+				E0T000002000000100000002 /* MediaManagerTests.swift */,
+				E0T000002000000100000003 /* MediaSyncManagerTests.swift */,
+			);
+			path = DaycatcherTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -442,6 +434,14 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		E0T000003000000100000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E06000001000000100000001 /* Daycatcher */;
+			targetProxy = E0T000003000000100000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
 		E0A000001000000100000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -570,7 +570,7 @@
 				CODE_SIGN_ENTITLEMENTS = Daycatcher/Daycatcher.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = PPJ6MUG34F;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Daycatcher;
@@ -588,7 +588,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.daycatcher.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.daycatchers.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -606,7 +606,7 @@
 				CODE_SIGN_ENTITLEMENTS = Daycatcher/Daycatcher.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = PPJ6MUG34F;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Daycatcher;
@@ -624,7 +624,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.daycatcher.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.daycatchers.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -644,7 +644,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.daycatcher.app.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.daycatchers.app.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -665,7 +665,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.daycatcher.app.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.daycatchers.app.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;

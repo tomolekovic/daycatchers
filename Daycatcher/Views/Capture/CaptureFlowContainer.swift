@@ -190,14 +190,15 @@ struct CaptureFlowContainer: View {
     }
 
     private func saveVideoToMemory(_ url: URL) async throws -> Memory {
-        // Save the video
+        // Save the video first
         guard let filename = MediaManager.shared.saveVideo(from: url) else {
             throw CaptureError.saveFailed
         }
 
-        // Generate and save thumbnail from video
+        // Generate thumbnail from the SAVED video (not temp file)
+        let savedVideoURL = MediaManager.shared.mediaURL(filename: filename, type: .video)
         var thumbnailFilename: String?
-        if let thumbnail = MediaManager.shared.generateVideoThumbnail(from: url) {
+        if let thumbnail = MediaManager.shared.generateVideoThumbnail(from: savedVideoURL) {
             thumbnailFilename = MediaManager.shared.saveThumbnail(image: thumbnail)
         }
 

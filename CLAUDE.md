@@ -2,14 +2,14 @@
 
 ## Project Overview
 
-Daycatcher is a privacy-first iOS app for capturing and preserving memories of loved ones (children, pets, family members). Built with SwiftUI and Core Data with CloudKit integration for family sharing.
+Daycatcher is a privacy-first iOS app for capturing and preserving memories of loved ones (children, pets, family members). Built with SwiftUI and Core Data with CloudKit integration for sync across devices.
 
 ## Tech Stack
 
 - **Language**: Swift 5
 - **UI Framework**: SwiftUI
 - **Data Persistence**: Core Data with NSPersistentCloudKitContainer
-- **Cloud Sync**: CloudKit (private + shared databases)
+- **Cloud Sync**: CloudKit (private database)
 - **Minimum iOS**: 18.0
 - **Architecture**: MVVM with environment-based dependency injection
 
@@ -42,15 +42,13 @@ Daycatcher/
 │   │   ├── TextCaptureView.swift
 │   │   └── CaptureFlowContainer.swift
 │   └── Components/
-│       ├── SyncStatusBadge.swift # Sync status indicator component
-│       └── CloudSharingView.swift # UICloudSharingController wrapper
+│       └── SyncStatusBadge.swift # Sync status indicator component
 ├── Theme/
 │   └── ThemeManager.swift        # Theme system (colors, fonts, spacing)
 └── Services/
     ├── MediaManager.swift        # Photo/video/audio file management
     ├── MediaSyncManager.swift    # CloudKit CKAsset upload/download
-    ├── PermissionsManager.swift  # Camera/photo/microphone permissions
-    └── SharingManager.swift      # CloudKit sharing operations
+    └── PermissionsManager.swift  # Camera/photo/microphone permissions
 ```
 
 ## Build Commands
@@ -68,7 +66,7 @@ xcodebuild test -scheme Daycatcher -destination 'platform=iOS Simulator,name=iPh
 
 ## Testing
 
-Unit tests are in the `DaycatcherTests` target (63 tests):
+Unit tests are in the `DaycatcherTests` target:
 - **EnumTests.swift** - Tests for all enums (MemoryType, RelationshipType, Gender, EventType, ReminderOffset, AgeStage, Season)
 - **MediaManagerTests.swift** - Tests for MediaManager (save/load/delete operations, URL builders, storage calculation)
 - **MediaSyncManagerTests.swift** - Tests for MediaSyncStatus enum, sync properties on Memory/LovedOne entities, Core Data persistence
@@ -79,7 +77,6 @@ Unit tests are in the `DaycatcherTests` target (63 tests):
 - **Bundle ID**: `com.daycatcher.app`
 - Uses NSPersistentCloudKitContainer for automatic Core Data sync
 - MediaSyncManager handles CKAsset uploads for binary media files
-- CKShare support for family sharing (Phase 10)
 
 ## Core Data Entities
 
@@ -145,20 +142,13 @@ Capture → MediaManager (local save) → Core Data save
    - Network monitoring with NWPathMonitor
    - SyncStatusBadge UI component
    - Settings UI for sync status and manual retry
-   - Unit tests (63 total tests passing)
 4. 🔲 **Timeline & Discovery** - Enhanced timeline, search, filtering
 5. 🔲 **Events & Reminders** - Milestone tracking, notifications
 6. 🔲 **Tags & AI** - Vision/NLP for auto-tagging
 7. 🔲 **Weekly Digests** - Auto-generated memory summaries
 8. 🔲 **Export & Backup** - PDF generation, local backup
 9. 🔲 **Offline Mode** - Conflict resolution, sync status UI improvements
-10. ✅ **Family Sharing** - CKShare + UICloudSharingController
-    - SharingManager for CloudKit sharing operations
-    - CloudSharingView wraps UICloudSharingController
-    - Share button in LovedOneDetailView with participants display
-    - FamilySharingView shows shared/unshared loved ones
-    - Share acceptance flow via onOpenURL handler
-    - Access control (owner vs participant permissions)
+10. 🔲 **Family Sharing** - CKShare + UICloudSharingController (not yet implemented)
 11. 🔲 **Themes & Polish** - Additional themes, animations
 12. 🔲 **Testing & Launch** - UI tests, App Store prep
 

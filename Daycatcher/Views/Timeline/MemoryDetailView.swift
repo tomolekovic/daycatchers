@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreData
+import AVKit
 
 struct MemoryDetailView: View {
     @EnvironmentObject var themeManager: ThemeManager
@@ -147,34 +148,64 @@ struct MemoryDetailView: View {
     }
 
     private var photoView: some View {
-        ZStack {
-            Rectangle()
-                .fill(themeManager.theme.surfaceColor)
+        Group {
+            if let mediaPath = memory.mediaPath,
+               let image = MediaManager.shared.loadImage(filename: mediaPath, type: .photo) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+            } else {
+                ZStack {
+                    Rectangle()
+                        .fill(themeManager.theme.surfaceColor)
 
-            // Placeholder - would load actual image
-            Image(systemName: "photo.fill")
-                .font(.system(size: 60))
-                .foregroundStyle(themeManager.theme.textSecondary.opacity(0.3))
+                    Image(systemName: "photo.fill")
+                        .font(.system(size: 60))
+                        .foregroundStyle(themeManager.theme.textSecondary.opacity(0.3))
+                }
+                .aspectRatio(4/3, contentMode: .fit)
+            }
         }
-        .aspectRatio(4/3, contentMode: .fit)
     }
+
+    @State private var showVideoPlayer = false
 
     private var videoView: some View {
         ZStack {
-            Rectangle()
-                .fill(themeManager.theme.surfaceColor)
+            // Show thumbnail or placeholder
+            if let thumbnailPath = memory.thumbnailPath,
+               let image = MediaManager.shared.loadThumbnail(filename: thumbnailPath) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+            } else {
+                Rectangle()
+                    .fill(themeManager.theme.surfaceColor)
+            }
 
+            // Play button overlay
             VStack(spacing: 12) {
                 Image(systemName: "play.circle.fill")
                     .font(.system(size: 60))
-                    .foregroundStyle(themeManager.theme.primaryColor)
+                    .foregroundStyle(.white.opacity(0.9))
+                    .shadow(radius: 4)
 
                 Text("Tap to play")
                     .font(themeManager.theme.captionFont)
-                    .foregroundStyle(themeManager.theme.textSecondary)
+                    .foregroundStyle(.white)
+                    .shadow(radius: 2)
             }
         }
         .aspectRatio(16/9, contentMode: .fit)
+        .clipShape(RoundedRectangle(cornerRadius: themeManager.theme.cornerRadiusMedium))
+        .onTapGesture {
+            showVideoPlayer = true
+        }
+        .fullScreenCover(isPresented: $showVideoPlayer) {
+            if let mediaPath = memory.mediaPath {
+                VideoPlayerView(videoURL: MediaManager.shared.mediaURL(filename: mediaPath, type: .video))
+            }
+        }
     }
 
     private var audioView: some View {
@@ -406,6 +437,30 @@ struct FlowLayout: Layout {
 
             self.size.height = currentY + lineHeight
         }
+    }
+}
+
+// MARK: - Video Player View
+
+struct VideoPlayerView: View {
+    @Environment(\.dismiss) private var dismiss
+    let videoURL: URL
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            VideoPlayer(player: AVPlayer(url: videoURL))
+                .ignoresSafeArea()
+
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.title)
+                    .foregroundStyle(.white.opacity(0.8))
+                    .padding()
+            }
+        }
+        .background(Color.black)
     }
 }
 
