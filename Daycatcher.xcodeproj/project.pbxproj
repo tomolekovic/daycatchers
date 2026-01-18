@@ -40,6 +40,12 @@
 		E01000001000000100000032 /* CaptureFlowContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000032 /* CaptureFlowContainer.swift */; };
 		E01000001000000100000033 /* MediaSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000033 /* MediaSyncManager.swift */; };
 		E01000001000000100000034 /* SyncStatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000034 /* SyncStatusBadge.swift */; };
+		E01000001000000100000035 /* CalendarTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000035 /* CalendarTimelineView.swift */; };
+		E01000001000000100000036 /* DiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000036 /* DiscoveryService.swift */; };
+		E01000001000000100000037 /* DiscoveryCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000037 /* DiscoveryCard.swift */; };
+		E01000001000000100000038 /* SearchHistoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000038 /* SearchHistoryManager.swift */; };
+		E01000001000000100000039 /* SearchSuggestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000039 /* SearchSuggestionsView.swift */; };
+		E01000001000000100000040 /* HighlightedText.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000040 /* HighlightedText.swift */; };
 		E0T000001000000100000001 /* EnumTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0T000002000000100000001 /* EnumTests.swift */; };
 		E0T000001000000100000002 /* MediaManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0T000002000000100000002 /* MediaManagerTests.swift */; };
 		E0T000001000000100000003 /* MediaSyncManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0T000002000000100000003 /* MediaSyncManagerTests.swift */; };
@@ -89,6 +95,12 @@
 		E02000001000000100000032 /* CaptureFlowContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureFlowContainer.swift; sourceTree = "<group>"; };
 		E02000001000000100000033 /* MediaSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSyncManager.swift; sourceTree = "<group>"; };
 		E02000001000000100000034 /* SyncStatusBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusBadge.swift; sourceTree = "<group>"; };
+		E02000001000000100000035 /* CalendarTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarTimelineView.swift; sourceTree = "<group>"; };
+		E02000001000000100000036 /* DiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryService.swift; sourceTree = "<group>"; };
+		E02000001000000100000037 /* DiscoveryCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryCard.swift; sourceTree = "<group>"; };
+		E02000001000000100000038 /* SearchHistoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchHistoryManager.swift; sourceTree = "<group>"; };
+		E02000001000000100000039 /* SearchSuggestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchSuggestionsView.swift; sourceTree = "<group>"; };
+		E02000001000000100000040 /* HighlightedText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightedText.swift; sourceTree = "<group>"; };
 		E03000001000000100000001 /* Daycatcher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Daycatcher.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E03000001000000100000002 /* Daycatcher.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Daycatcher.entitlements; sourceTree = "<group>"; };
 		E0T000002000000100000001 /* EnumTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnumTests.swift; sourceTree = "<group>"; };
@@ -191,6 +203,8 @@
 				E02000001000000100000012 /* MediaManager.swift */,
 				E02000001000000100000033 /* MediaSyncManager.swift */,
 				E02000001000000100000026 /* PermissionsManager.swift */,
+				E02000001000000100000036 /* DiscoveryService.swift */,
+				E02000001000000100000038 /* SearchHistoryManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -235,6 +249,7 @@
 				E02000001000000100000018 /* MemoriesTimelineView.swift */,
 				E02000001000000100000019 /* MemoryDetailView.swift */,
 				E02000001000000100000020 /* EditMemoryView.swift */,
+				E02000001000000100000035 /* CalendarTimelineView.swift */,
 			);
 			path = Timeline;
 			sourceTree = "<group>";
@@ -262,6 +277,9 @@
 			isa = PBXGroup;
 			children = (
 				E02000001000000100000034 /* SyncStatusBadge.swift */,
+				E02000001000000100000037 /* DiscoveryCard.swift */,
+				E02000001000000100000039 /* SearchSuggestionsView.swift */,
+				E02000001000000100000040 /* HighlightedText.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -419,6 +437,12 @@
 				E01000001000000100000032 /* CaptureFlowContainer.swift in Sources */,
 				E01000001000000100000033 /* MediaSyncManager.swift in Sources */,
 				E01000001000000100000034 /* SyncStatusBadge.swift in Sources */,
+				E01000001000000100000035 /* CalendarTimelineView.swift in Sources */,
+				E01000001000000100000036 /* DiscoveryService.swift in Sources */,
+				E01000001000000100000037 /* DiscoveryCard.swift in Sources */,
+				E01000001000000100000038 /* SearchHistoryManager.swift in Sources */,
+				E01000001000000100000039 /* SearchSuggestionsView.swift in Sources */,
+				E01000001000000100000040 /* HighlightedText.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

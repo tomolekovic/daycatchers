@@ -247,6 +247,64 @@ enum MediaSyncStatus: String, CaseIterable, Identifiable {
     }
 }
 
+// MARK: - Sort Option (for Timeline)
+
+enum SortOption: String, CaseIterable, Identifiable {
+    case newestFirst = "newest_first"
+    case oldestFirst = "oldest_first"
+    case byPerson = "by_person"
+    case byType = "by_type"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .newestFirst: return "Newest First"
+        case .oldestFirst: return "Oldest First"
+        case .byPerson: return "By Person"
+        case .byType: return "By Type"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .newestFirst: return "arrow.down"
+        case .oldestFirst: return "arrow.up"
+        case .byPerson: return "person.fill"
+        case .byType: return "square.grid.2x2"
+        }
+    }
+}
+
+// MARK: - Grouping Option (for Timeline)
+
+enum GroupingOption: String, CaseIterable, Identifiable {
+    case byMonth = "by_month"
+    case bySeason = "by_season"
+    case byYear = "by_year"
+    case byLocation = "by_location"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .byMonth: return "By Month"
+        case .bySeason: return "By Season"
+        case .byYear: return "By Year"
+        case .byLocation: return "By Location"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .byMonth: return "calendar"
+        case .bySeason: return "leaf.fill"
+        case .byYear: return "calendar.badge.clock"
+        case .byLocation: return "mappin"
+        }
+    }
+}
+
 // MARK: - Season (for auto-tagging)
 
 enum Season: String, CaseIterable {

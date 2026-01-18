@@ -28,11 +28,15 @@ Daycatcher/
 │   ├── Event+CoreDataClass.swift
 │   ├── Tag+CoreDataClass.swift
 │   ├── WeeklyDigest+CoreDataClass.swift
-│   └── Enums.swift               # MemoryType, RelationshipType, MediaSyncStatus, etc.
+│   └── Enums.swift               # MemoryType, RelationshipType, MediaSyncStatus, SortOption, GroupingOption, etc.
 ├── Views/
 │   ├── Home/                     # Home tab views
 │   ├── LovedOnes/                # Loved ones management
 │   ├── Timeline/                 # Memory timeline/grid
+│   │   ├── MemoriesTimelineView.swift # Main timeline with sorting/filtering
+│   │   ├── CalendarTimelineView.swift # Calendar month view
+│   │   ├── MemoryDetailView.swift
+│   │   └── EditMemoryView.swift
 │   ├── Events/                   # Events and reminders
 │   ├── Settings/                 # App settings (includes media sync UI)
 │   ├── Capture/                  # Memory capture flows
@@ -42,13 +46,18 @@ Daycatcher/
 │   │   ├── TextCaptureView.swift
 │   │   └── CaptureFlowContainer.swift
 │   └── Components/
-│       └── SyncStatusBadge.swift # Sync status indicator component
+│       ├── SyncStatusBadge.swift # Sync status indicator component
+│       ├── DiscoveryCard.swift   # On This Day and Rediscover cards
+│       ├── SearchSuggestionsView.swift # Search suggestions overlay
+│       └── HighlightedText.swift # Search term highlighting
 ├── Theme/
 │   └── ThemeManager.swift        # Theme system (colors, fonts, spacing)
 └── Services/
     ├── MediaManager.swift        # Photo/video/audio file management
     ├── MediaSyncManager.swift    # CloudKit CKAsset upload/download
-    └── PermissionsManager.swift  # Camera/photo/microphone permissions
+    ├── PermissionsManager.swift  # Camera/photo/microphone permissions
+    ├── DiscoveryService.swift    # On This Day, Rediscover features
+    └── SearchHistoryManager.swift # Recent search history
 ```
 
 ## Build Commands
@@ -142,7 +151,15 @@ Capture → MediaManager (local save) → Core Data save
    - Network monitoring with NWPathMonitor
    - SyncStatusBadge UI component
    - Settings UI for sync status and manual retry
-4. 🔲 **Timeline & Discovery** - Enhanced timeline, search, filtering
+4. ✅ **Timeline & Discovery** - Enhanced timeline, search, filtering
+   - SortOption/GroupingOption enums for flexible memory organization
+   - Enhanced MemoriesTimelineView with date range and tag filtering
+   - CalendarTimelineView with month navigation and day selection
+   - DiscoveryService for "On This Day" and "Rediscover" features
+   - OnThisDayCard and RediscoverCard on HomeView
+   - SearchHistoryManager for recent searches persistence
+   - SearchSuggestionsView with people, tags, and recent searches
+   - HighlightedText for search term highlighting
 5. 🔲 **Events & Reminders** - Milestone tracking, notifications
 6. 🔲 **Tags & AI** - Vision/NLP for auto-tagging
 7. 🔲 **Weekly Digests** - Auto-generated memory summaries

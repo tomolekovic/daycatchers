@@ -17,11 +17,25 @@ struct MemoriesTimelineView: View {
     )
     private var lovedOnes: FetchedResults<LovedOne>
 
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \Tag.name, ascending: true)],
+        animation: .default
+    )
+    private var allTags: FetchedResults<Tag>
+
     @State private var searchText = ""
     @State private var selectedLovedOne: LovedOne?
     @State private var selectedType: MemoryType?
     @State private var showingFilters = false
     @State private var viewMode: ViewMode = .grid
+
+    // Phase 4 additions
+    @State private var sortOption: SortOption = .newestFirst
+    @State private var groupingOption: GroupingOption = .byMonth
+    @State private var startDate: Date?
+    @State private var endDate: Date?
+    @State private var selectedTags: Set<Tag> = []
+    @State private var isSearchActive = false
 
     enum ViewMode: String, CaseIterable {
         case grid = "Grid"
@@ -48,6 +62,28 @@ struct MemoriesTimelineView: View {
             result = result.filter { $0.memoryType == type }
         }
 
+        // Filter by date range
+        if let start = startDate {
+            result = result.filter { memory in
+                guard let captureDate = memory.captureDate else { return false }
+                return captureDate >= start
+            }
+        }
+        if let end = endDate {
+            result = result.filter { memory in
+                guard let captureDate = memory.captureDate else { return false }
+                return captureDate <= end
+            }
+        }
+
+        // Filter by selected tags
+        if !selectedTags.isEmpty {
+            result = result.filter { memory in
+                let memoryTags = Set(memory.tagsArray)
+                return !memoryTags.isDisjoint(with: selectedTags)
+            }
+        }
+
         // Filter by search
         if !searchText.isEmpty {
             result = result.filter { memory in
@@ -63,11 +99,60 @@ struct MemoriesTimelineView: View {
             }
         }
 
+        // Apply sorting
+        result = sortMemories(result)
+
         return result
     }
 
-    private var memoriesByMonth: [(String, [Memory])] {
-        let grouped = Dictionary(grouping: filteredMemories) { memory -> String in
+    private func sortMemories(_ memories: [Memory]) -> [Memory] {
+        switch sortOption {
+        case .newestFirst:
+            return memories.sorted { ($0.captureDate ?? .distantPast) > ($1.captureDate ?? .distantPast) }
+        case .oldestFirst:
+            return memories.sorted { ($0.captureDate ?? .distantPast) < ($1.captureDate ?? .distantPast) }
+        case .byPerson:
+            return memories.sorted {
+                let name0 = $0.lovedOne?.name ?? ""
+                let name1 = $1.lovedOne?.name ?? ""
+                if name0 == name1 {
+                    return ($0.captureDate ?? .distantPast) > ($1.captureDate ?? .distantPast)
+                }
+                return name0 < name1
+            }
+        case .byType:
+            return memories.sorted {
+                if $0.memoryType == $1.memoryType {
+                    return ($0.captureDate ?? .distantPast) > ($1.captureDate ?? .distantPast)
+                }
+                return $0.memoryType.rawValue < $1.memoryType.rawValue
+            }
+        }
+    }
+
+    private var groupedMemories: [(String, [Memory])] {
+        let grouped: [(String, [Memory])]
+
+        switch groupingOption {
+        case .byMonth:
+            grouped = groupByMonth(filteredMemories)
+        case .bySeason:
+            grouped = groupBySeason(filteredMemories)
+        case .byYear:
+            grouped = groupByYear(filteredMemories)
+        case .byLocation:
+            grouped = groupByLocation(filteredMemories)
+        }
+
+        // Sort groups based on sort option
+        if sortOption == .oldestFirst {
+            return grouped.reversed()
+        }
+        return grouped
+    }
+
+    private func groupByMonth(_ memories: [Memory]) -> [(String, [Memory])] {
+        let grouped = Dictionary(grouping: memories) { memory -> String in
             guard let date = memory.captureDate else { return "Unknown" }
             let formatter = DateFormatter()
             formatter.dateFormat = "MMMM yyyy"
@@ -83,10 +168,53 @@ struct MemoriesTimelineView: View {
         }
     }
 
+    private func groupBySeason(_ memories: [Memory]) -> [(String, [Memory])] {
+        let grouped = Dictionary(grouping: memories) { memory -> String in
+            guard let date = memory.captureDate else { return "Unknown" }
+            let season = Season.season(for: date)
+            let year = Calendar.current.component(.year, from: date)
+            return "\(season.displayName) \(year)"
+        }
+
+        return grouped.sorted { first, second in
+            guard let firstDate = first.value.first?.captureDate,
+                  let secondDate = second.value.first?.captureDate else {
+                return false
+            }
+            return firstDate > secondDate
+        }
+    }
+
+    private func groupByYear(_ memories: [Memory]) -> [(String, [Memory])] {
+        let grouped = Dictionary(grouping: memories) { memory -> String in
+            guard let date = memory.captureDate else { return "Unknown" }
+            let year = Calendar.current.component(.year, from: date)
+            return String(year)
+        }
+
+        return grouped.sorted { first, second in
+            return (Int(first.0) ?? 0) > (Int(second.0) ?? 0)
+        }
+    }
+
+    private func groupByLocation(_ memories: [Memory]) -> [(String, [Memory])] {
+        let grouped = Dictionary(grouping: memories) { memory -> String in
+            memory.locationName ?? "Unknown Location"
+        }
+
+        return grouped.sorted { first, second in
+            if first.0 == "Unknown Location" { return false }
+            if second.0 == "Unknown Location" { return true }
+            return first.0 < second.0
+        }
+    }
+
     private var activeFilterCount: Int {
         var count = 0
         if selectedLovedOne != nil { count += 1 }
         if selectedType != nil { count += 1 }
+        if startDate != nil || endDate != nil { count += 1 }
+        if !selectedTags.isEmpty { count += 1 }
         return count
     }
 
@@ -101,10 +229,31 @@ struct MemoriesTimelineView: View {
             }
             .background(themeManager.theme.backgroundColor)
             .navigationTitle("Timeline")
-            .searchable(text: $searchText, prompt: "Search memories")
+            .searchable(text: $searchText, isPresented: $isSearchActive, prompt: "Search memories")
+            .onSubmit(of: .search) {
+                if !searchText.isEmpty {
+                    SearchHistoryManager.shared.addSearch(searchText)
+                }
+            }
+            .overlay {
+                if isSearchActive && searchText.isEmpty {
+                    SearchSuggestionsView(
+                        lovedOnes: Array(lovedOnes),
+                        tags: Array(allTags),
+                        onSearchSelect: { term in
+                            searchText = term
+                            SearchHistoryManager.shared.addSearch(term)
+                        },
+                        onClearHistory: {}
+                    )
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     HStack(spacing: 12) {
+                        // Sort & Group Menu
+                        sortGroupMenu
+
                         // View Mode Toggle
                         Menu {
                             ForEach(ViewMode.allCases, id: \.self) { mode in
@@ -135,11 +284,49 @@ struct MemoriesTimelineView: View {
             .sheet(isPresented: $showingFilters) {
                 FilterSheet(
                     lovedOnes: Array(lovedOnes),
+                    allTags: Array(allTags),
                     selectedLovedOne: $selectedLovedOne,
-                    selectedType: $selectedType
+                    selectedType: $selectedType,
+                    startDate: $startDate,
+                    endDate: $endDate,
+                    selectedTags: $selectedTags
                 )
-                .presentationDetents([.medium])
+                .presentationDetents([.large])
             }
+        }
+    }
+
+    // MARK: - Sort & Group Menu
+
+    private var sortGroupMenu: some View {
+        Menu {
+            Section("Sort By") {
+                ForEach(SortOption.allCases) { option in
+                    Button(action: { sortOption = option }) {
+                        HStack {
+                            Label(option.displayName, systemImage: option.icon)
+                            if sortOption == option {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
+            }
+
+            Section("Group By") {
+                ForEach(GroupingOption.allCases) { option in
+                    Button(action: { groupingOption = option }) {
+                        HStack {
+                            Label(option.displayName, systemImage: option.icon)
+                            if groupingOption == option {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: "arrow.up.arrow.down")
         }
     }
 
@@ -151,7 +338,7 @@ struct MemoriesTimelineView: View {
             case .grid:
                 gridView
             case .calendar:
-                calendarView
+                CalendarTimelineView(memories: filteredMemories)
             }
         }
     }
@@ -166,25 +353,37 @@ struct MemoriesTimelineView: View {
             }
 
             LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
-                ForEach(memoriesByMonth, id: \.0) { month, monthMemories in
+                ForEach(groupedMemories, id: \.0) { groupName, groupMemories in
                     Section {
-                        memoryGrid(for: monthMemories)
+                        memoryGrid(for: groupMemories)
                     } header: {
-                        monthHeader(month)
+                        groupHeader(groupName, count: groupMemories.count)
                     }
                 }
             }
         }
     }
 
-    private func monthHeader(_ month: String) -> some View {
-        Text(month)
-            .font(themeManager.theme.headlineFont)
-            .foregroundStyle(themeManager.theme.textPrimary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-            .background(themeManager.theme.backgroundColor)
+    private func groupHeader(_ title: String, count: Int) -> some View {
+        HStack {
+            Text(title)
+                .font(themeManager.theme.headlineFont)
+                .foregroundStyle(themeManager.theme.textPrimary)
+
+            Spacer()
+
+            Text("\(count)")
+                .font(themeManager.theme.captionFont)
+                .foregroundStyle(themeManager.theme.textSecondary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .background(themeManager.theme.surfaceColor)
+                .clipShape(Capsule())
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(themeManager.theme.backgroundColor)
     }
 
     private func memoryGrid(for memories: [Memory]) -> some View {
@@ -202,17 +401,6 @@ struct MemoriesTimelineView: View {
             }
         }
         .padding(.horizontal, 2)
-    }
-
-    // MARK: - Calendar View
-
-    private var calendarView: some View {
-        VStack {
-            Text("Calendar view coming soon")
-                .font(themeManager.theme.bodyFont)
-                .foregroundStyle(themeManager.theme.textSecondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Active Filters
@@ -236,9 +424,27 @@ struct MemoriesTimelineView: View {
                     )
                 }
 
+                if startDate != nil || endDate != nil {
+                    FilterChip(
+                        label: dateRangeLabel,
+                        onRemove: {
+                            startDate = nil
+                            endDate = nil
+                        },
+                        theme: themeManager.theme
+                    )
+                }
+
+                ForEach(Array(selectedTags)) { tag in
+                    FilterChip(
+                        label: tag.name ?? "Tag",
+                        onRemove: { selectedTags.remove(tag) },
+                        theme: themeManager.theme
+                    )
+                }
+
                 Button("Clear All") {
-                    selectedLovedOne = nil
-                    selectedType = nil
+                    clearAllFilters()
                 }
                 .font(themeManager.theme.captionFont)
                 .foregroundStyle(themeManager.theme.primaryColor)
@@ -246,6 +452,28 @@ struct MemoriesTimelineView: View {
             .padding(.horizontal)
             .padding(.vertical, 8)
         }
+    }
+
+    private var dateRangeLabel: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+
+        if let start = startDate, let end = endDate {
+            return "\(formatter.string(from: start)) - \(formatter.string(from: end))"
+        } else if let start = startDate {
+            return "From \(formatter.string(from: start))"
+        } else if let end = endDate {
+            return "Until \(formatter.string(from: end))"
+        }
+        return "Date Range"
+    }
+
+    private func clearAllFilters() {
+        selectedLovedOne = nil
+        selectedType = nil
+        startDate = nil
+        endDate = nil
+        selectedTags.removeAll()
     }
 
     // MARK: - Empty State
@@ -305,8 +533,17 @@ struct FilterSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     let lovedOnes: [LovedOne]
+    let allTags: [Tag]
     @Binding var selectedLovedOne: LovedOne?
     @Binding var selectedType: MemoryType?
+    @Binding var startDate: Date?
+    @Binding var endDate: Date?
+    @Binding var selectedTags: Set<Tag>
+
+    @State private var showStartDatePicker = false
+    @State private var showEndDatePicker = false
+    @State private var tempStartDate = Date()
+    @State private var tempEndDate = Date()
 
     var body: some View {
         NavigationStack {
@@ -333,10 +570,81 @@ struct FilterSheet: View {
                     .labelsHidden()
                 }
 
+                Section("Date Range") {
+                    HStack {
+                        Text("From")
+                        Spacer()
+                        if let start = startDate {
+                            Text(start, style: .date)
+                                .foregroundStyle(themeManager.theme.primaryColor)
+                            Button {
+                                startDate = nil
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(themeManager.theme.textSecondary)
+                            }
+                        } else {
+                            Button("Select") {
+                                tempStartDate = Date()
+                                showStartDatePicker = true
+                            }
+                            .foregroundStyle(themeManager.theme.primaryColor)
+                        }
+                    }
+
+                    HStack {
+                        Text("To")
+                        Spacer()
+                        if let end = endDate {
+                            Text(end, style: .date)
+                                .foregroundStyle(themeManager.theme.primaryColor)
+                            Button {
+                                endDate = nil
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(themeManager.theme.textSecondary)
+                            }
+                        } else {
+                            Button("Select") {
+                                tempEndDate = Date()
+                                showEndDatePicker = true
+                            }
+                            .foregroundStyle(themeManager.theme.primaryColor)
+                        }
+                    }
+                }
+
+                if !allTags.isEmpty {
+                    Section("Tags") {
+                        ForEach(allTags) { tag in
+                            Button {
+                                if selectedTags.contains(tag) {
+                                    selectedTags.remove(tag)
+                                } else {
+                                    selectedTags.insert(tag)
+                                }
+                            } label: {
+                                HStack {
+                                    Text(tag.name ?? "Unknown")
+                                        .foregroundStyle(themeManager.theme.textPrimary)
+                                    Spacer()
+                                    if selectedTags.contains(tag) {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(themeManager.theme.primaryColor)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Section {
-                    Button("Clear Filters") {
+                    Button("Clear All Filters") {
                         selectedLovedOne = nil
                         selectedType = nil
+                        startDate = nil
+                        endDate = nil
+                        selectedTags.removeAll()
                     }
                     .foregroundStyle(themeManager.theme.destructive)
                 }
@@ -346,6 +654,58 @@ struct FilterSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+            .sheet(isPresented: $showStartDatePicker) {
+                DatePickerSheet(
+                    title: "Start Date",
+                    date: $tempStartDate,
+                    onSave: { startDate = tempStartDate }
+                )
+                .presentationDetents([.medium])
+            }
+            .sheet(isPresented: $showEndDatePicker) {
+                DatePickerSheet(
+                    title: "End Date",
+                    date: $tempEndDate,
+                    onSave: { endDate = tempEndDate }
+                )
+                .presentationDetents([.medium])
+            }
+        }
+    }
+}
+
+// MARK: - Date Picker Sheet
+
+struct DatePickerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let title: String
+    @Binding var date: Date
+    let onSave: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            VStack {
+                DatePicker(title, selection: $date, displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .padding()
+
+                Spacer()
+            }
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        onSave()
                         dismiss()
                     }
                 }

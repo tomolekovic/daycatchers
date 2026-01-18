@@ -39,6 +39,11 @@ struct HomeView: View {
                     // Quick Capture
                     quickCaptureSection
 
+                    // Discovery Section
+                    if !recentMemories.isEmpty {
+                        discoverySection
+                    }
+
                     // Upcoming Events
                     if !upcomingEvents.isEmpty {
                         upcomingEventsSection
@@ -135,6 +140,15 @@ struct HomeView: View {
         .padding()
         .background(themeManager.theme.surfaceColor)
         .clipShape(RoundedRectangle(cornerRadius: themeManager.theme.cornerRadiusMedium))
+    }
+
+    // MARK: - Discovery Section
+
+    private var discoverySection: some View {
+        VStack(alignment: .leading, spacing: themeManager.theme.spacingMedium) {
+            OnThisDayCard()
+            RediscoverCard()
+        }
     }
 
     // MARK: - Upcoming Events Section
