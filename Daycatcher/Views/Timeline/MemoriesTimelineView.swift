@@ -396,7 +396,7 @@ struct MemoriesTimelineView: View {
 
         return LazyVGrid(columns: columns, spacing: 2) {
             ForEach(memories) { memory in
-                NavigationLink(destination: MemoryDetailView(memory: memory)) {
+                SafeMemoryNavigationLink(memory: memory) {
                     MemoryThumbnail(memory: memory, theme: themeManager.theme)
                 }
             }

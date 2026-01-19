@@ -234,7 +234,7 @@ struct LovedOneDetailView: View {
 
         return LazyVGrid(columns: columns, spacing: 2) {
             ForEach(memories) { memory in
-                NavigationLink(destination: MemoryDetailView(memory: memory)) {
+                SafeMemoryNavigationLink(memory: memory) {
                     MemoryThumbnail(memory: memory, theme: themeManager.theme)
                 }
             }
@@ -342,52 +342,59 @@ struct MemoryThumbnail: View {
     @State private var isLoading = false
 
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                Rectangle()
-                    .fill(theme.surfaceColor)
+        // Guard against inaccessible memories to prevent Core Data fault crashes.
+        // This is critical because SwiftUI may evaluate this body AFTER a CloudKit sync
+        // deletes the memory, even if the parent ForEach had a filter.
+        if memory.isAccessible {
+            GeometryReader { geometry in
+                ZStack {
+                    Rectangle()
+                        .fill(theme.surfaceColor)
 
-                if let image = loadedImage {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: geometry.size.width, height: geometry.size.width)
-                } else if isLoading {
-                    // Loading indicator
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle())
-                } else {
-                    // Placeholder icon for non-image types or missing media
-                    Image(systemName: memory.memoryType.icon)
-                        .font(.title2)
-                        .foregroundStyle(memory.memoryType.color.opacity(0.5))
-                }
-
-                // Type indicator
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
+                    if let image = loadedImage {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: geometry.size.width, height: geometry.size.width)
+                    } else if isLoading {
+                        // Loading indicator
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle())
+                    } else {
+                        // Placeholder icon for non-image types or missing media
                         Image(systemName: memory.memoryType.icon)
-                            .font(.caption2)
-                            .foregroundStyle(.white)
-                            .padding(4)
-                            .background(memory.memoryType.color.opacity(0.8))
-                            .clipShape(Circle())
-                            .padding(4)
+                            .font(.title2)
+                            .foregroundStyle(memory.memoryType.color.opacity(0.5))
+                    }
+
+                    // Type indicator
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            Image(systemName: memory.memoryType.icon)
+                                .font(.caption2)
+                                .foregroundStyle(.white)
+                                .padding(4)
+                                .background(memory.memoryType.color.opacity(0.8))
+                                .clipShape(Circle())
+                                .padding(4)
+                        }
                     }
                 }
+                .frame(width: geometry.size.width, height: geometry.size.width)
+                .clipped()
             }
-            .frame(width: geometry.size.width, height: geometry.size.width)
-            .clipped()
-        }
-        .aspectRatio(1, contentMode: .fit)
-        .task {
-            await loadThumbnail()
+            .aspectRatio(1, contentMode: .fit)
+            .task {
+                await loadThumbnail()
+            }
         }
     }
 
     private func loadThumbnail() async {
+        // Guard against inaccessible memories before attempting to load
+        guard memory.isAccessible else { return }
         // CRITICAL: Check if this is a shared memory FIRST
         // We must NOT access memory.thumbnailData for shared memories because:
         // - thumbnailData uses external binary storage (allowsExternalBinaryDataStorage=YES)

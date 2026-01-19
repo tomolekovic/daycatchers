@@ -190,14 +190,36 @@ extension Memory: Identifiable { }
 
 extension Memory {
     /// Check if this Memory object is accessible and its data can be read.
-    /// Returns false for faults that cannot be fulfilled (e.g., from shared store).
+    /// Returns false for faults that cannot be fulfilled (e.g., deleted by CloudKit sync).
     ///
-    /// IMPORTANT: This implementation does NOT use `existingObject(with:)` because
-    /// that method throws an Objective-C exception (NSObjectInaccessibleException)
-    /// that CANNOT be caught by Swift's do-try-catch mechanism.
+    /// This check handles the case where CloudKit syncs a deletion from another device.
+    /// When that happens, the managed object still exists in memory (as a fault), but
+    /// attempting to access its properties throws an NSObjectInaccessibleException
+    /// which Swift CANNOT catch. We use ObjCExceptionCatcher to safely verify the
+    /// fault can be fulfilled before accessing properties.
     var isAccessible: Bool {
-        // Use PersistenceController's centralized accessibility check
-        // This handles shared store readiness and prevents faults on inaccessible objects
-        return PersistenceController.shared.isObjectAccessible(self)
+        // First check if we have a context - this is safe and doesn't trigger fault fulfillment
+        guard let context = managedObjectContext else { return false }
+
+        // Check if the object ID has a valid persistent store
+        // This is safe to access and doesn't trigger fault fulfillment
+        guard objectID.persistentStore != nil else { return false }
+
+        // Temporary objects are always accessible
+        if objectID.isTemporaryID { return true }
+
+        // Use existingObject(with:) which throws a Swift-catchable error
+        // instead of an ObjC exception when the object can't be faulted.
+        // This is more reliable than ObjC @try/@catch for iOS 18+
+        do {
+            let existingObject = try context.existingObject(with: objectID)
+            // Verify it's not deleted and passes persistence checks
+            guard !existingObject.isDeleted else { return false }
+            guard PersistenceController.shared.isObjectAccessible(self) else { return false }
+            return true
+        } catch {
+            // Object doesn't exist in store or fault couldn't be fulfilled
+            return false
+        }
     }
 }

@@ -142,6 +142,13 @@ struct MemoryDetailView: View {
         } message: {
             Text("This memory will be permanently deleted.")
         }
+        .onReceive(NotificationCenter.default.publisher(for: .coreDataRemoteChangeProcessed)) { _ in
+            // If the memory becomes inaccessible (e.g., deleted by CloudKit sync),
+            // dismiss this view to avoid crashes when accessing its properties.
+            if !memory.isAccessible {
+                dismiss()
+            }
+        }
     }
 
     // MARK: - Media View

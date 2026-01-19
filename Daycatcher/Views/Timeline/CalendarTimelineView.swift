@@ -205,10 +205,9 @@ struct CalendarTimelineView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
                             ForEach(selectedDayMemories) { memory in
-                                NavigationLink(destination: MemoryDetailView(memory: memory)) {
+                                SafeMemoryNavigationLink(memory: memory) {
                                     CalendarMemoryCard(memory: memory, theme: themeManager.theme)
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                         .padding(.horizontal)
@@ -313,53 +312,58 @@ struct CalendarMemoryCard: View {
     let theme: Theme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: theme.spacingSmall) {
-            // Thumbnail
-            ZStack {
-                RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
-                    .fill(theme.surfaceColor)
+        // Guard against inaccessible memories to prevent Core Data fault crashes.
+        // This is critical because SwiftUI may evaluate this body AFTER a CloudKit sync
+        // deletes the memory, even if the parent ForEach had a filter.
+        if memory.isAccessible {
+            VStack(alignment: .leading, spacing: theme.spacingSmall) {
+                // Thumbnail
+                ZStack {
+                    RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                        .fill(theme.surfaceColor)
 
-                if let thumbnailPath = memory.thumbnailPath,
-                   let image = MediaManager.shared.loadThumbnail(filename: thumbnailPath) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                } else if memory.memoryType == .photo,
-                          let mediaPath = memory.mediaPath,
-                          let image = MediaManager.shared.loadImage(filename: mediaPath, type: .photo) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    VStack(spacing: 4) {
-                        Image(systemName: memory.memoryType.icon)
-                            .font(.title)
-                            .foregroundStyle(memory.memoryType.color.opacity(0.7))
+                    if let thumbnailPath = memory.thumbnailPath,
+                       let image = MediaManager.shared.loadThumbnail(filename: thumbnailPath) {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                    } else if memory.memoryType == .photo,
+                              let mediaPath = memory.mediaPath,
+                              let image = MediaManager.shared.loadImage(filename: mediaPath, type: .photo) {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        VStack(spacing: 4) {
+                            Image(systemName: memory.memoryType.icon)
+                                .font(.title)
+                                .foregroundStyle(memory.memoryType.color.opacity(0.7))
 
-                        Text(memory.memoryType.displayName)
+                            Text(memory.memoryType.displayName)
+                                .font(.caption2)
+                                .foregroundStyle(theme.textSecondary)
+                        }
+                    }
+                }
+                .frame(width: 100, height: 100)
+                .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusSmall))
+
+                // Title
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(memory.title ?? "Memory")
+                        .font(theme.captionFont)
+                        .foregroundStyle(theme.textPrimary)
+                        .lineLimit(1)
+
+                    if let time = memory.captureDate {
+                        Text(time, style: .time)
                             .font(.caption2)
                             .foregroundStyle(theme.textSecondary)
                     }
                 }
             }
-            .frame(width: 100, height: 100)
-            .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusSmall))
-
-            // Title
-            VStack(alignment: .leading, spacing: 2) {
-                Text(memory.title ?? "Memory")
-                    .font(theme.captionFont)
-                    .foregroundStyle(theme.textPrimary)
-                    .lineLimit(1)
-
-                if let time = memory.captureDate {
-                    Text(time, style: .time)
-                        .font(.caption2)
-                        .foregroundStyle(theme.textSecondary)
-                }
-            }
+            .frame(width: 100)
         }
-        .frame(width: 100)
     }
 }
 

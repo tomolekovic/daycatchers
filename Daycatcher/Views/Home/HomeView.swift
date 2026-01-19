@@ -259,10 +259,9 @@ struct HomeView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: themeManager.theme.spacingMedium) {
                     ForEach(Array(accessibleRecentMemories.prefix(10))) { memory in
-                        NavigationLink(destination: MemoryDetailView(memory: memory)) {
+                        SafeMemoryNavigationLink(memory: memory) {
                             RecentMemoryCard(memory: memory, theme: themeManager.theme)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
             }

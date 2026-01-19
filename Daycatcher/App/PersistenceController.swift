@@ -161,6 +161,14 @@ final class PersistenceController: ObservableObject {
     @objc private func handleRemoteChange(_ notification: Notification) {
         DispatchQueue.main.async {
             self.syncStatus = .synced(Date())
+
+            // Refresh all objects to pick up remote changes.
+            // This is essential for properly handling deletions from other devices.
+            self.viewContext.refreshAllObjects()
+
+            // Post notification so views can react to remote changes
+            // (e.g., dismiss detail views for deleted objects)
+            NotificationCenter.default.post(name: .coreDataRemoteChangeProcessed, object: nil)
         }
     }
 
@@ -328,4 +336,12 @@ final class PersistenceController: ObservableObject {
 
         return true
     }
+}
+
+// MARK: - Notification Names
+
+extension Notification.Name {
+    /// Posted after a Core Data remote change has been processed.
+    /// Views should listen for this to refresh their state and handle deleted objects.
+    static let coreDataRemoteChangeProcessed = Notification.Name("coreDataRemoteChangeProcessed")
 }

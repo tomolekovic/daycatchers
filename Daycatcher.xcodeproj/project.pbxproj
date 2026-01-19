@@ -61,6 +61,8 @@
 		E0T000001000000100000002 /* MediaManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0T000002000000100000002 /* MediaManagerTests.swift */; };
 		E0T000001000000100000003 /* MediaSyncManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0T000002000000100000003 /* MediaSyncManagerTests.swift */; };
 		E0T000001000000100000004 /* SharingManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0T000002000000100000004 /* SharingManagerTests.swift */; };
+		E01000001000000100000052 /* ObjCExceptionCatcher.m in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000053 /* ObjCExceptionCatcher.m */; };
+		E01000001000000100000054 /* SafeMemoryNavigationLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000055 /* SafeMemoryNavigationLink.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -132,6 +134,10 @@
 		E0T000002000000100000003 /* MediaSyncManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSyncManagerTests.swift; sourceTree = "<group>"; };
 		E0T000002000000100000004 /* SharingManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharingManagerTests.swift; sourceTree = "<group>"; };
 		E0T000004000000100000001 /* DaycatcherTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DaycatcherTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E02000001000000100000052 /* ObjCExceptionCatcher.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ObjCExceptionCatcher.h; sourceTree = "<group>"; };
+		E02000001000000100000053 /* ObjCExceptionCatcher.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ObjCExceptionCatcher.m; sourceTree = "<group>"; };
+		E02000001000000100000054 /* Daycatcher-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Daycatcher-Bridging-Header.h"; sourceTree = "<group>"; };
+		E02000001000000100000055 /* SafeMemoryNavigationLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeMemoryNavigationLink.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -166,12 +172,14 @@
 			children = (
 				E03000001000000100000002 /* Daycatcher.entitlements */,
 				E03000001000000100000003 /* Info.plist */,
+				E02000001000000100000054 /* Daycatcher-Bridging-Header.h */,
 				E05000001000000100000004 /* App */,
 				E05000001000000100000005 /* Models */,
 				E05000001000000100000006 /* Views */,
 				E05000001000000100000007 /* Services */,
 				E05000001000000100000008 /* Theme */,
 				E05000001000000100000009 /* Resources */,
+				E05000001000000100000018 /* Utilities */,
 			);
 			path = Daycatcher;
 			sourceTree = "<group>";
@@ -325,8 +333,18 @@
 				E02000001000000100000037 /* DiscoveryCard.swift */,
 				E02000001000000100000039 /* SearchSuggestionsView.swift */,
 				E02000001000000100000040 /* HighlightedText.swift */,
+				E02000001000000100000055 /* SafeMemoryNavigationLink.swift */,
 			);
 			path = Components;
+			sourceTree = "<group>";
+		};
+		E05000001000000100000018 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				E02000001000000100000052 /* ObjCExceptionCatcher.h */,
+				E02000001000000100000053 /* ObjCExceptionCatcher.m */,
+			);
+			path = Utilities;
 			sourceTree = "<group>";
 		};
 		E05000001000000100000016 /* Capture */ = {
@@ -500,6 +518,8 @@
 				E01000001000000100000049 /* SharingManager.swift in Sources */,
 				E01000001000000100000050 /* CloudSharingView.swift in Sources */,
 				E01000001000000100000051 /* SharedProfilesView.swift in Sources */,
+				E01000001000000100000052 /* ObjCExceptionCatcher.m in Sources */,
+				E01000001000000100000054 /* SafeMemoryNavigationLink.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -666,6 +686,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Daycatcher/Daycatcher-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -693,6 +714,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Daycatcher/Daycatcher-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};

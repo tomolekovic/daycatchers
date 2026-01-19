@@ -47,6 +47,10 @@ struct OnThisDayCard: View {
         .onAppear {
             loadMemories()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .coreDataRemoteChangeProcessed)) { _ in
+            // Refresh memories when remote changes occur (e.g., deletions from other devices)
+            loadMemories()
+        }
     }
 
     private var totalCount: Int {
@@ -79,10 +83,9 @@ struct OnThisDayCard: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             ForEach(yearGroup.memories.prefix(5)) { memory in
-                                NavigationLink(destination: MemoryDetailView(memory: memory)) {
+                                SafeMemoryNavigationLink(memory: memory) {
                                     OnThisDayMemoryThumbnail(memory: memory, theme: themeManager.theme)
                                 }
-                                .buttonStyle(.plain)
                             }
 
                             if yearGroup.memories.count > 5 {
@@ -185,11 +188,10 @@ struct RediscoverCard: View {
                 ProgressView()
                     .frame(maxWidth: .infinity)
                     .padding()
-            } else if let memory = memory {
-                NavigationLink(destination: MemoryDetailView(memory: memory)) {
+            } else if let memory = memory, memory.isAccessible {
+                SafeMemoryNavigationLink(memory: memory) {
                     RediscoverMemoryContent(memory: memory, theme: themeManager.theme)
                 }
-                .buttonStyle(.plain)
             } else {
                 emptyState
             }
@@ -199,6 +201,13 @@ struct RediscoverCard: View {
         .clipShape(RoundedRectangle(cornerRadius: themeManager.theme.cornerRadiusMedium))
         .onAppear {
             loadMemory()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .coreDataRemoteChangeProcessed)) { _ in
+            // Refresh memory when remote changes occur
+            // If the current memory was deleted, this will find a new one
+            if memory == nil || !memory!.isAccessible {
+                loadMemory()
+            }
         }
     }
 

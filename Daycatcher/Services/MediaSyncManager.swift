@@ -106,6 +106,9 @@ final class MediaSyncManager: ObservableObject {
 
     /// Queue a memory for media upload
     func queueUpload(for memory: Memory) async {
+        // Guard against accessing deleted memory (CloudKit sync may have deleted it)
+        guard memory.isAccessible else { return }
+
         guard memory.hasMedia else { return }
         guard memory.memoryType != .text else { return }
         guard memory.syncStatus != .synced else { return }
@@ -122,6 +125,9 @@ final class MediaSyncManager: ObservableObject {
 
     /// Upload media file as CKAsset to CloudKit
     func uploadMedia(for memory: Memory) async {
+        // Guard against accessing deleted memory (CloudKit sync may have deleted it)
+        guard memory.isAccessible else { return }
+
         guard let mediaPath = memory.mediaPath else { return }
         guard memory.syncStatus != .synced else { return }
 
@@ -240,6 +246,9 @@ final class MediaSyncManager: ObservableObject {
 
     /// Download media for a memory if not locally available
     func downloadMediaIfNeeded(for memory: Memory) async throws -> URL? {
+        // Guard against accessing deleted memory (CloudKit sync may have deleted it)
+        guard memory.isAccessible else { return nil }
+
         guard memory.needsMediaDownload else {
             return memory.mediaURL
         }
@@ -290,6 +299,9 @@ final class MediaSyncManager: ObservableObject {
 
     /// Download thumbnail if not locally available
     func downloadThumbnailIfNeeded(for memory: Memory) async throws -> URL? {
+        // Guard against accessing deleted memory (CloudKit sync may have deleted it)
+        guard memory.isAccessible else { return nil }
+
         guard memory.needsThumbnailDownload else {
             return memory.thumbnailURL
         }
@@ -329,6 +341,9 @@ final class MediaSyncManager: ObservableObject {
     /// When a LovedOne is shared via CKShare, media must be uploaded to the share zone
     /// (not the private zone's default zone) for recipients to access it.
     func uploadMediaToSharedZone(for memory: Memory, zoneID: CKRecordZone.ID) async {
+        // Guard against accessing deleted memory (CloudKit sync may have deleted it)
+        guard memory.isAccessible else { return }
+
         guard let mediaPath = memory.mediaPath else { return }
         let mediaURL = mediaManager.mediaURL(filename: mediaPath, type: memory.memoryType)
 
@@ -447,6 +462,9 @@ final class MediaSyncManager: ObservableObject {
     /// Fetch media for a shared memory (from the shared database)
     /// This is used when displaying memories that were shared with the user
     func fetchSharedMedia(for memory: Memory) async throws -> Data? {
+        // Guard against accessing deleted memory (CloudKit sync may have deleted it)
+        guard memory.isAccessible else { return nil }
+
         print("[MediaSyncManager] fetchSharedMedia called for memory: \(memory.id?.uuidString ?? "unknown")")
 
         // First check if we already have it locally cached
@@ -470,6 +488,9 @@ final class MediaSyncManager: ObservableObject {
 
     /// Fetch shared thumbnail for a memory
     func fetchSharedThumbnail(for memory: Memory) async throws -> Data? {
+        // Guard against accessing deleted memory (CloudKit sync may have deleted it)
+        guard memory.isAccessible else { return nil }
+
         print("[MediaSyncManager] fetchSharedThumbnail called for memory: \(memory.id?.uuidString ?? "unknown")")
 
         // First check if we already have it locally cached
@@ -687,6 +708,9 @@ final class MediaSyncManager: ObservableObject {
 
     /// Delete cloud assets for a memory
     func deleteCloudAssets(for memory: Memory) async throws {
+        // Guard against accessing deleted memory (CloudKit sync may have deleted it)
+        guard memory.isAccessible else { return }
+
         var recordIDsToDelete: [CKRecord.ID] = []
 
         if let mediaRecordName = memory.cloudAssetRecordName {
@@ -721,6 +745,9 @@ final class MediaSyncManager: ObservableObject {
         let context = persistenceController.viewContext
 
         await context.perform {
+            // Guard against accessing deleted memory (CloudKit sync may have deleted it)
+            guard memory.isAccessible else { return }
+
             memory.syncStatus = status
             memory.lastSyncAttempt = Date()
             if let error = error {
@@ -734,6 +761,9 @@ final class MediaSyncManager: ObservableObject {
         let context = persistenceController.viewContext
 
         await context.perform {
+            // Guard against accessing deleted memory (CloudKit sync may have deleted it)
+            guard memory.isAccessible else { return }
+
             memory.uploadProgress = progress
             try? context.save()
         }
@@ -743,6 +773,9 @@ final class MediaSyncManager: ObservableObject {
         let context = persistenceController.viewContext
 
         await context.perform {
+            // Guard against accessing deleted memory (CloudKit sync may have deleted it)
+            guard memory.isAccessible else { return }
+
             memory.cloudAssetRecordName = recordName
             try? context.save()
         }
@@ -752,6 +785,9 @@ final class MediaSyncManager: ObservableObject {
         let context = persistenceController.viewContext
 
         await context.perform {
+            // Guard against accessing deleted memory (CloudKit sync may have deleted it)
+            guard memory.isAccessible else { return }
+
             memory.cloudThumbnailRecordName = recordName
             memory.thumbnailSyncStatusValue = .synced
             try? context.save()
@@ -762,6 +798,9 @@ final class MediaSyncManager: ObservableObject {
         let context = persistenceController.viewContext
 
         await context.perform {
+            // Guard against accessing deleted memory (CloudKit sync may have deleted it)
+            guard memory.isAccessible else { return }
+
             memory.mediaPath = path
             try? context.save()
         }
@@ -771,6 +810,9 @@ final class MediaSyncManager: ObservableObject {
         let context = persistenceController.viewContext
 
         await context.perform {
+            // Guard against accessing deleted memory (CloudKit sync may have deleted it)
+            guard memory.isAccessible else { return }
+
             memory.thumbnailPath = path
             try? context.save()
         }

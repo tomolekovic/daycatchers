@@ -43,6 +43,12 @@ struct DigestDetailView: View {
             await loadMemories()
             markAsRead()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .coreDataRemoteChangeProcessed)) { _ in
+            // Refresh memories when remote changes occur (e.g., deletions from other devices)
+            // Filter out any inaccessible memories from our @State arrays
+            highlightedMemories = highlightedMemories.filter { $0.isAccessible }
+            allMemories = allMemories.filter { $0.isAccessible }
+        }
     }
 
     // MARK: - Header
@@ -135,10 +141,9 @@ struct DigestDetailView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: themeManager.theme.spacingMedium) {
                     ForEach(highlightedMemories.filter { $0.isAccessible }) { memory in
-                        NavigationLink(destination: MemoryDetailView(memory: memory)) {
+                        SafeMemoryNavigationLink(memory: memory) {
                             HighlightedMemoryCard(memory: memory, theme: themeManager.theme)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -163,10 +168,9 @@ struct DigestDetailView: View {
                 GridItem(.flexible())
             ], spacing: themeManager.theme.spacingSmall) {
                 ForEach(accessibleMemories) { memory in
-                    NavigationLink(destination: MemoryDetailView(memory: memory)) {
+                    SafeMemoryNavigationLink(memory: memory) {
                         MemoryGridItem(memory: memory, theme: themeManager.theme)
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
@@ -247,8 +251,82 @@ struct HighlightedMemoryCard: View {
     let theme: Theme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: theme.spacingSmall) {
-            // Thumbnail
+        // Guard against inaccessible memories to prevent Core Data fault crashes.
+        // This is critical because SwiftUI may evaluate this body AFTER a CloudKit sync
+        // deletes the memory, even if the parent ForEach had a filter.
+        if memory.isAccessible {
+            VStack(alignment: .leading, spacing: theme.spacingSmall) {
+                // Thumbnail
+                ZStack {
+                    RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                        .fill(theme.surfaceColor)
+
+                    if let thumbnailPath = memory.thumbnailPath,
+                       let image = MediaManager.shared.loadThumbnail(filename: thumbnailPath) {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                    } else if memory.memoryType == .photo,
+                              let mediaPath = memory.mediaPath,
+                              let image = MediaManager.shared.loadImage(filename: mediaPath, type: .photo) {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        Image(systemName: memory.memoryType.icon)
+                            .font(.largeTitle)
+                            .foregroundStyle(memory.memoryType.color.opacity(0.5))
+                    }
+
+                    // Type badge
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Image(systemName: memory.memoryType.icon)
+                                .font(.caption)
+                                .foregroundStyle(.white)
+                                .padding(4)
+                                .background(memory.memoryType.color)
+                                .clipShape(Circle())
+                                .padding(6)
+                        }
+                        Spacer()
+                    }
+                }
+                .frame(width: 150, height: 150)
+                .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusSmall))
+
+                // Info
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(memory.title ?? memory.memoryType.displayName)
+                        .font(theme.captionFont)
+                        .foregroundStyle(theme.textPrimary)
+                        .lineLimit(1)
+
+                    if let lovedOne = memory.lovedOne {
+                        Text(lovedOne.name ?? "")
+                            .font(theme.captionFont)
+                            .foregroundStyle(theme.textSecondary)
+                            .lineLimit(1)
+                    }
+                }
+            }
+            .frame(width: 150)
+        }
+    }
+}
+
+// MARK: - Memory Grid Item
+
+struct MemoryGridItem: View {
+    let memory: Memory
+    let theme: Theme
+
+    var body: some View {
+        // Guard against inaccessible memories to prevent Core Data fault crashes.
+        // This is critical because SwiftUI may evaluate this body AFTER a CloudKit sync
+        // deletes the memory, even if the parent ForEach had a filter.
+        if memory.isAccessible {
             ZStack {
                 RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
                     .fill(theme.surfaceColor)
@@ -266,92 +344,28 @@ struct HighlightedMemoryCard: View {
                         .scaledToFill()
                 } else {
                     Image(systemName: memory.memoryType.icon)
-                        .font(.largeTitle)
+                        .font(.title2)
                         .foregroundStyle(memory.memoryType.color.opacity(0.5))
                 }
 
-                // Type badge
+                // Type indicator
                 VStack {
                     HStack {
                         Spacer()
                         Image(systemName: memory.memoryType.icon)
-                            .font(.caption)
+                            .font(.caption2)
                             .foregroundStyle(.white)
-                            .padding(4)
-                            .background(memory.memoryType.color)
+                            .padding(3)
+                            .background(memory.memoryType.color.opacity(0.8))
                             .clipShape(Circle())
-                            .padding(6)
+                            .padding(4)
                     }
                     Spacer()
                 }
             }
-            .frame(width: 150, height: 150)
+            .aspectRatio(1, contentMode: .fill)
             .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusSmall))
-
-            // Info
-            VStack(alignment: .leading, spacing: 2) {
-                Text(memory.title ?? memory.memoryType.displayName)
-                    .font(theme.captionFont)
-                    .foregroundStyle(theme.textPrimary)
-                    .lineLimit(1)
-
-                if let lovedOne = memory.lovedOne {
-                    Text(lovedOne.name ?? "")
-                        .font(theme.captionFont)
-                        .foregroundStyle(theme.textSecondary)
-                        .lineLimit(1)
-                }
-            }
         }
-        .frame(width: 150)
-    }
-}
-
-// MARK: - Memory Grid Item
-
-struct MemoryGridItem: View {
-    let memory: Memory
-    let theme: Theme
-
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
-                .fill(theme.surfaceColor)
-
-            if let thumbnailPath = memory.thumbnailPath,
-               let image = MediaManager.shared.loadThumbnail(filename: thumbnailPath) {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else if memory.memoryType == .photo,
-                      let mediaPath = memory.mediaPath,
-                      let image = MediaManager.shared.loadImage(filename: mediaPath, type: .photo) {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                Image(systemName: memory.memoryType.icon)
-                    .font(.title2)
-                    .foregroundStyle(memory.memoryType.color.opacity(0.5))
-            }
-
-            // Type indicator
-            VStack {
-                HStack {
-                    Spacer()
-                    Image(systemName: memory.memoryType.icon)
-                        .font(.caption2)
-                        .foregroundStyle(.white)
-                        .padding(3)
-                        .background(memory.memoryType.color.opacity(0.8))
-                        .clipShape(Circle())
-                        .padding(4)
-                }
-                Spacer()
-            }
-        }
-        .aspectRatio(1, contentMode: .fill)
-        .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusSmall))
     }
 }
 
