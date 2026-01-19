@@ -17,7 +17,8 @@ struct CalendarTimelineView: View {
     }
 
     private var memoriesByDay: [Date: [Memory]] {
-        Dictionary(grouping: memories) { memory -> Date in
+        let accessibleMemories = memories.filter { $0.isAccessible }
+        return Dictionary(grouping: accessibleMemories) { memory -> Date in
             guard let captureDate = memory.captureDate else {
                 return Date.distantPast
             }

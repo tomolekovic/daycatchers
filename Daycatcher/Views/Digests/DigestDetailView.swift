@@ -134,7 +134,7 @@ struct DigestDetailView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: themeManager.theme.spacingMedium) {
-                    ForEach(highlightedMemories) { memory in
+                    ForEach(highlightedMemories.filter { $0.isAccessible }) { memory in
                         NavigationLink(destination: MemoryDetailView(memory: memory)) {
                             HighlightedMemoryCard(memory: memory, theme: themeManager.theme)
                         }
@@ -147,9 +147,13 @@ struct DigestDetailView: View {
 
     // MARK: - All Memories Section
 
+    private var accessibleMemories: [Memory] {
+        allMemories.filter { $0.isAccessible }
+    }
+
     private var allMemoriesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("All Memories (\(allMemories.count))", systemImage: "square.grid.2x2")
+            Label("All Memories (\(accessibleMemories.count))", systemImage: "square.grid.2x2")
                 .font(themeManager.theme.headlineFont)
                 .foregroundStyle(themeManager.theme.textPrimary)
 
@@ -158,7 +162,7 @@ struct DigestDetailView: View {
                 GridItem(.flexible()),
                 GridItem(.flexible())
             ], spacing: themeManager.theme.spacingSmall) {
-                ForEach(allMemories) { memory in
+                ForEach(accessibleMemories) { memory in
                     NavigationLink(destination: MemoryDetailView(memory: memory)) {
                         MemoryGridItem(memory: memory, theme: themeManager.theme)
                     }
@@ -176,19 +180,19 @@ struct DigestDetailView: View {
     }
 
     private var photoCount: Int {
-        allMemories.filter { $0.memoryType == .photo }.count
+        accessibleMemories.filter { $0.memoryType == .photo }.count
     }
 
     private var videoCount: Int {
-        allMemories.filter { $0.memoryType == .video }.count
+        accessibleMemories.filter { $0.memoryType == .video }.count
     }
 
     private var audioCount: Int {
-        allMemories.filter { $0.memoryType == .audio }.count
+        accessibleMemories.filter { $0.memoryType == .audio }.count
     }
 
     private var textCount: Int {
-        allMemories.filter { $0.memoryType == .text }.count
+        accessibleMemories.filter { $0.memoryType == .text }.count
     }
 
     // MARK: - Actions

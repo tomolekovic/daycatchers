@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreData
+import CloudKit
 
 struct LovedOneDetailView: View {
     @EnvironmentObject var themeManager: ThemeManager
@@ -51,18 +52,26 @@ struct LovedOneDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    Button(action: { showingEditSheet = true }) {
-                        Label("Edit", systemImage: "pencil")
+                HStack(spacing: 16) {
+                    // Share button
+                    Button(action: initiateSharing) {
+                        Image(systemName: lovedOne.isSharedWithFamily ? "person.2.fill" : "person.badge.plus")
                     }
 
-                    Divider()
+                    // More options menu
+                    Menu {
+                        Button(action: { showingEditSheet = true }) {
+                            Label("Edit", systemImage: "pencil")
+                        }
 
-                    Button(role: .destructive, action: { showingDeleteAlert = true }) {
-                        Label("Delete", systemImage: "trash")
+                        Divider()
+
+                        Button(role: .destructive, action: { showingDeleteAlert = true }) {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
                     }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
                 }
             }
         }
@@ -79,6 +88,10 @@ struct LovedOneDetailView: View {
         }
         .sheet(item: $captureType) { type in
             CaptureFlowContainer(memoryType: type, lovedOne: lovedOne)
+        }
+        .task {
+            // If this is a shared profile we own, ensure media is synced to share zone
+            await SharingManager.shared.syncMediaForExistingShare(lovedOne: lovedOne)
         }
     }
 
@@ -107,6 +120,11 @@ struct LovedOneDetailView: View {
                         .font(themeManager.theme.bodyFont)
                         .foregroundStyle(themeManager.theme.textSecondary)
                 }
+            }
+
+            // Shared status indicator
+            if lovedOne.isSharedWithFamily {
+                SharedStatusBadge(lovedOne: lovedOne)
             }
 
             // Stats Row
@@ -205,6 +223,7 @@ struct LovedOneDetailView: View {
 
     private var memoriesGrid: some View {
         let memories = (lovedOne.memories?.allObjects as? [Memory] ?? [])
+            .filter { $0.isAccessible }
             .sorted { ($0.captureDate ?? Date.distantPast) > ($1.captureDate ?? Date.distantPast) }
 
         let columns = [
@@ -284,6 +303,12 @@ struct LovedOneDetailView: View {
             print("Error deleting loved one: \(error)")
         }
     }
+
+    private func initiateSharing() {
+        // Get existing share if any and present sharing UI directly
+        let existingShare = PersistenceController.shared.share(for: lovedOne)
+        CloudSharingPresenter.shared.presentSharing(for: lovedOne, existingShare: existingShare)
+    }
 }
 
 // MARK: - Stat View
@@ -313,27 +338,24 @@ struct MemoryThumbnail: View {
     let memory: Memory
     let theme: Theme
 
+    @State private var loadedImage: UIImage?
+    @State private var isLoading = false
+
     var body: some View {
         GeometryReader { geometry in
             ZStack {
                 Rectangle()
                     .fill(theme.surfaceColor)
 
-                // Try to load the thumbnail image
-                if let thumbnailPath = memory.thumbnailPath,
-                   let image = MediaManager.shared.loadThumbnail(filename: thumbnailPath) {
+                if let image = loadedImage {
                     Image(uiImage: image)
                         .resizable()
                         .scaledToFill()
                         .frame(width: geometry.size.width, height: geometry.size.width)
-                } else if memory.memoryType == .photo,
-                          let mediaPath = memory.mediaPath,
-                          let image = MediaManager.shared.loadImage(filename: mediaPath, type: .photo) {
-                    // Fallback: load full image if thumbnail missing
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: geometry.size.width, height: geometry.size.width)
+                } else if isLoading {
+                    // Loading indicator
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle())
                 } else {
                     // Placeholder icon for non-image types or missing media
                     Image(systemName: memory.memoryType.icon)
@@ -360,6 +382,56 @@ struct MemoryThumbnail: View {
             .clipped()
         }
         .aspectRatio(1, contentMode: .fit)
+        .task {
+            await loadThumbnail()
+        }
+    }
+
+    private func loadThumbnail() async {
+        // CRITICAL: Check if this is a shared memory FIRST
+        // We must NOT access memory.thumbnailData for shared memories because:
+        // - thumbnailData uses external binary storage (allowsExternalBinaryDataStorage=YES)
+        // - CloudKit auto-fetches external data using _defaultZone
+        // - _defaultZone doesn't exist in the shared database
+        // - This triggers "Default zone is not accessible in shared DB" error
+        let isShared = PersistenceController.shared.isFromSharedStore(memory: memory)
+
+        if isShared {
+            // For shared memories, go directly to CloudKit fetch (query-based)
+            isLoading = true
+            defer { isLoading = false }
+
+            if let image = await MediaManager.shared.loadThumbnail(for: memory) {
+                loadedImage = image
+            } else if memory.memoryType == .photo {
+                if let image = await MediaManager.shared.loadImage(for: memory) {
+                    loadedImage = image
+                }
+            }
+            return
+        }
+
+        // For NON-shared memories, it's safe to access Core Data properties
+
+        // Priority 1: Check Core Data thumbnailData
+        if let thumbnailData = memory.thumbnailData, let image = UIImage(data: thumbnailData) {
+            loadedImage = image
+            return
+        }
+
+        // Priority 2: Try to load from local file (synchronous)
+        if let thumbnailPath = memory.thumbnailPath,
+           let image = MediaManager.shared.loadThumbnail(filename: thumbnailPath) {
+            loadedImage = image
+            return
+        }
+
+        if memory.memoryType == .photo,
+           let mediaPath = memory.mediaPath,
+           let image = MediaManager.shared.loadImage(filename: mediaPath, type: .photo) {
+            loadedImage = image
+            return
+        }
     }
 }
 

@@ -215,7 +215,7 @@ final class PDFExportService: ObservableObject {
         request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
         request.sortDescriptors = [NSSortDescriptor(keyPath: \Memory.captureDate, ascending: false)]
 
-        return try context.fetch(request)
+        return try context.fetch(request).filter { $0.isAccessible }
     }
 
     private func fetchEvents(

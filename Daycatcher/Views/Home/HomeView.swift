@@ -36,6 +36,11 @@ struct HomeView: View {
     @State private var showLovedOnePicker = false
     @State private var pendingCaptureType: MemoryType?
 
+    /// Filter recentMemories to only include accessible memories (avoiding Core Data faults)
+    private var accessibleRecentMemories: [Memory] {
+        Array(recentMemories).filter { $0.isAccessible }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -52,7 +57,7 @@ struct HomeView: View {
                     }
 
                     // Discovery Section
-                    if !recentMemories.isEmpty {
+                    if !accessibleRecentMemories.isEmpty {
                         discoverySection
                     }
 
@@ -62,7 +67,7 @@ struct HomeView: View {
                     }
 
                     // Recent Memories
-                    if !recentMemories.isEmpty {
+                    if !accessibleRecentMemories.isEmpty {
                         recentMemoriesSection
                     }
 
@@ -253,7 +258,7 @@ struct HomeView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: themeManager.theme.spacingMedium) {
-                    ForEach(Array(recentMemories.prefix(10))) { memory in
+                    ForEach(Array(accessibleRecentMemories.prefix(10))) { memory in
                         NavigationLink(destination: MemoryDetailView(memory: memory)) {
                             RecentMemoryCard(memory: memory, theme: themeManager.theme)
                         }
@@ -411,46 +416,48 @@ struct RecentMemoryCard: View {
     let theme: Theme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: theme.spacingSmall) {
-            // Thumbnail
-            ZStack {
-                RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
-                    .fill(theme.surfaceColor)
+        if memory.isAccessible {
+            VStack(alignment: .leading, spacing: theme.spacingSmall) {
+                // Thumbnail
+                ZStack {
+                    RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                        .fill(theme.surfaceColor)
 
-                if let thumbnailPath = memory.thumbnailPath,
-                   let image = MediaManager.shared.loadThumbnail(filename: thumbnailPath) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                } else if memory.memoryType == .photo,
-                          let mediaPath = memory.mediaPath,
-                          let image = MediaManager.shared.loadImage(filename: mediaPath, type: .photo) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    Image(systemName: memory.memoryType.icon)
-                        .font(.largeTitle)
-                        .foregroundStyle(memory.memoryType.color.opacity(0.5))
+                    if let thumbnailPath = memory.thumbnailPath,
+                       let image = MediaManager.shared.loadThumbnail(filename: thumbnailPath) {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                    } else if memory.memoryType == .photo,
+                              let mediaPath = memory.mediaPath,
+                              let image = MediaManager.shared.loadImage(filename: mediaPath, type: .photo) {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        Image(systemName: memory.memoryType.icon)
+                            .font(.largeTitle)
+                            .foregroundStyle(memory.memoryType.color.opacity(0.5))
+                    }
                 }
-            }
-            .frame(width: 120, height: 120)
-            .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusSmall))
+                .frame(width: 120, height: 120)
+                .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusSmall))
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(memory.title ?? "Memory")
-                    .font(theme.captionFont)
-                    .foregroundStyle(theme.textPrimary)
-                    .lineLimit(1)
-
-                if let lovedOne = memory.lovedOne {
-                    Text(lovedOne.name ?? "")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(memory.title ?? "Memory")
                         .font(theme.captionFont)
-                        .foregroundStyle(theme.textSecondary)
+                        .foregroundStyle(theme.textPrimary)
+                        .lineLimit(1)
+
+                    if let lovedOne = memory.lovedOne {
+                        Text(lovedOne.name ?? "")
+                            .font(theme.captionFont)
+                            .foregroundStyle(theme.textSecondary)
+                    }
                 }
             }
+            .frame(width: 120)
         }
-        .frame(width: 120)
     }
 }
 

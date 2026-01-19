@@ -210,6 +210,121 @@ final class MediaManager {
         return UIImage(data: data)
     }
 
+    // MARK: - Shared Media Loading
+
+    /// Load image for a memory, handling both local and shared memories
+    /// For shared memories, this will fetch from CloudKit if not cached locally
+    func loadImage(for memory: Memory) async -> UIImage? {
+        // Check if this is a shared memory (from the shared store)
+        let isShared = PersistenceController.shared.isFromSharedStore(memory: memory)
+
+        // First try to load locally
+        if let mediaPath = memory.mediaPath {
+            let url = mediaURL(filename: mediaPath, type: memory.memoryType)
+            if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
+                return image
+            }
+        }
+
+        // If shared and not found locally, fetch from CloudKit
+        if isShared {
+            print("[MediaManager] Fetching shared media for memory: \(memory.id?.uuidString ?? "unknown")")
+            do {
+                if let data = try await MediaSyncManager.shared.fetchSharedMedia(for: memory),
+                   let image = UIImage(data: data) {
+                    return image
+                }
+            } catch {
+                print("[MediaManager] Error fetching shared media: \(error)")
+            }
+        }
+
+        return nil
+    }
+
+    /// Load thumbnail for a memory, handling both local and shared memories
+    func loadThumbnail(for memory: Memory) async -> UIImage? {
+        // CRITICAL: Check if this is a shared memory FIRST
+        // We must NOT access memory.thumbnailData for shared memories because:
+        // - thumbnailData uses external binary storage (allowsExternalBinaryDataStorage=YES)
+        // - CloudKit auto-fetches external data using _defaultZone
+        // - _defaultZone doesn't exist in the shared database
+        // - This triggers "Default zone is not accessible in shared DB" error
+        let isShared = PersistenceController.shared.isFromSharedStore(memory: memory)
+
+        if isShared {
+            // For shared memories, skip Core Data access and fetch from CloudKit
+            print("[MediaManager] Fetching shared thumbnail for memory: \(memory.id?.uuidString ?? "unknown")")
+            do {
+                if let data = try await MediaSyncManager.shared.fetchSharedThumbnail(for: memory),
+                   let image = UIImage(data: data) {
+                    return image
+                }
+            } catch {
+                print("[MediaManager] Error fetching shared thumbnail: \(error)")
+                // Fallback: try to fetch the main media and create a thumbnail from it
+                do {
+                    if let data = try await MediaSyncManager.shared.fetchSharedMedia(for: memory),
+                       let image = UIImage(data: data) {
+                        return image.resized(to: CGSize(width: 300, height: 300))
+                    }
+                } catch {
+                    print("[MediaManager] Error fetching shared media for thumbnail fallback: \(error)")
+                }
+            }
+            return nil
+        }
+
+        // For NON-shared memories, it's safe to access Core Data properties
+
+        // Priority 1: Check Core Data thumbnailData
+        if let thumbnailData = memory.thumbnailData, let image = UIImage(data: thumbnailData) {
+            return image
+        }
+
+        // Priority 2: Try to load from local file
+        if let thumbnailPath = memory.thumbnailPath {
+            let url = thumbnailURL(filename: thumbnailPath)
+            if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
+                return image
+            }
+        }
+
+        return nil
+    }
+
+    /// Load video URL for a memory, handling both local and shared memories
+    func loadVideoURL(for memory: Memory) async -> URL? {
+        // Check if this is a shared memory
+        let isShared = PersistenceController.shared.isFromSharedStore(memory: memory)
+
+        // First try to get local URL
+        if let mediaPath = memory.mediaPath {
+            let url = mediaURL(filename: mediaPath, type: .video)
+            if fileManager.fileExists(atPath: url.path) {
+                return url
+            }
+        }
+
+        // If shared and not found locally, fetch from CloudKit
+        if isShared {
+            print("[MediaManager] Fetching shared video for memory: \(memory.id?.uuidString ?? "unknown")")
+            do {
+                if let data = try await MediaSyncManager.shared.fetchSharedMedia(for: memory) {
+                    // Save to local cache
+                    let filename = "\(memory.id?.uuidString ?? UUID().uuidString).mov"
+                    let url = mediaURL(filename: filename, type: .video)
+                    try data.write(to: url)
+                    return url
+                }
+            } catch {
+                print("[MediaManager] Error fetching shared video: \(error)")
+            }
+        }
+
+        return nil
+    }
+
     func loadProfileImage(filename: String) -> UIImage? {
         let url = profileImageURL(filename: filename)
         guard let data = try? Data(contentsOf: url) else { return nil }

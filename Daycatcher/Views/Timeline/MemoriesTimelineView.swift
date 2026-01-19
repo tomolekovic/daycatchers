@@ -50,7 +50,8 @@ struct MemoriesTimelineView: View {
     }
 
     private var filteredMemories: [Memory] {
-        var result = Array(memories)
+        // Filter to only accessible memories first (avoids Core Data fault crashes)
+        var result = Array(memories).filter { $0.isAccessible }
 
         // Filter by loved one
         if let lovedOne = selectedLovedOne {

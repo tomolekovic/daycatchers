@@ -3,6 +3,7 @@ import CloudKit
 
 /// PersistenceController manages the Core Data stack with CloudKit integration.
 /// Uses NSPersistentCloudKitContainer for automatic sync to iCloud.
+/// Configured with TWO stores: private (user's data) and shared (data shared with user).
 final class PersistenceController: ObservableObject {
     static let shared = PersistenceController()
 
@@ -12,8 +13,19 @@ final class PersistenceController: ObservableObject {
     /// The Core Data container with CloudKit sync
     let container: NSPersistentCloudKitContainer
 
+    /// Reference to the private store (user's own data)
+    private(set) var privateStore: NSPersistentStore?
+
+    /// Reference to the shared store (data shared with user from others)
+    private(set) var sharedStore: NSPersistentStore?
+
     /// Published sync status for UI observation
     @Published var syncStatus: SyncStatus = .idle
+
+    /// Flag indicating whether the shared store is ready for access.
+    /// On app launch, the shared store's CloudKit zone may not be immediately available.
+    /// Objects from the shared store should not be accessed until this is true.
+    @Published var isSharedStoreReady: Bool = false
 
     enum SyncStatus: Equatable {
         case idle
@@ -49,51 +61,81 @@ final class PersistenceController: ObservableObject {
                 container = NSPersistentCloudKitContainer(name: "Daycatcher")
             }
 
-            // Configure the persistent store description
-            guard let description = container.persistentStoreDescriptions.first else {
-                fatalError("Failed to retrieve persistent store description. Ensure Daycatcher.xcdatamodeld is added to the target.")
-            }
-
-            configureStore(description: description, inMemory: inMemory)
-            loadStore()
+            configureStores(inMemory: inMemory)
+            loadStores()
             return
         }
 
         container = NSPersistentCloudKitContainer(name: "Daycatcher", managedObjectModel: model)
-
-        // Configure the persistent store description
-        guard let description = container.persistentStoreDescriptions.first else {
-            fatalError("Failed to retrieve persistent store description. Ensure Daycatcher.xcdatamodeld is added to the target.")
-        }
-
-        configureStore(description: description, inMemory: inMemory)
-        loadStore()
+        configureStores(inMemory: inMemory)
+        loadStores()
     }
 
-    private func configureStore(description: NSPersistentStoreDescription, inMemory: Bool) {
+    private func configureStores(inMemory: Bool) {
+        // Get the default store URL from the first description
+        guard let defaultDescription = container.persistentStoreDescriptions.first,
+              let defaultURL = defaultDescription.url else {
+            fatalError("Failed to retrieve persistent store description.")
+        }
+
         if inMemory {
-            description.url = URL(fileURLWithPath: "/dev/null")
-            description.cloudKitContainerOptions = nil
-        } else {
-            // Configure CloudKit sync
-            let cloudKitOptions = NSPersistentCloudKitContainerOptions(
-                containerIdentifier: Self.cloudKitContainerIdentifier
-            )
-
-            // Enable history tracking for CloudKit sync
-            description.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
-            description.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
-
-            description.cloudKitContainerOptions = cloudKitOptions
+            defaultDescription.url = URL(fileURLWithPath: "/dev/null")
+            defaultDescription.cloudKitContainerOptions = nil
+            return
         }
+
+        // MARK: - Configure Private Store (user's own data)
+        let privateStoreURL = defaultURL.deletingLastPathComponent()
+            .appendingPathComponent("Daycatcher-private.sqlite")
+
+        let privateDescription = NSPersistentStoreDescription(url: privateStoreURL)
+        let privateOptions = NSPersistentCloudKitContainerOptions(
+            containerIdentifier: Self.cloudKitContainerIdentifier
+        )
+        privateOptions.databaseScope = .private
+        privateDescription.cloudKitContainerOptions = privateOptions
+        privateDescription.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
+        privateDescription.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
+
+        // MARK: - Configure Shared Store (data shared with user from others)
+        let sharedStoreURL = defaultURL.deletingLastPathComponent()
+            .appendingPathComponent("Daycatcher-shared.sqlite")
+
+        let sharedDescription = NSPersistentStoreDescription(url: sharedStoreURL)
+        let sharedOptions = NSPersistentCloudKitContainerOptions(
+            containerIdentifier: Self.cloudKitContainerIdentifier
+        )
+        sharedOptions.databaseScope = .shared
+        sharedDescription.cloudKitContainerOptions = sharedOptions
+        sharedDescription.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
+        sharedDescription.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
+
+        // Replace the default descriptions with our configured ones
+        container.persistentStoreDescriptions = [privateDescription, sharedDescription]
+
+        print("[PersistenceController] Configured stores:")
+        print("[PersistenceController] - Private store: \(privateStoreURL)")
+        print("[PersistenceController] - Shared store: \(sharedStoreURL)")
     }
 
-    private func loadStore() {
-        // Load the persistent store
-        container.loadPersistentStores { storeDescription, error in
+    private func loadStores() {
+        // Load the persistent stores
+        container.loadPersistentStores { [weak self] storeDescription, error in
             if let error = error as NSError? {
                 // In production, handle this gracefully
                 fatalError("Unresolved error \(error), \(error.userInfo)")
+            }
+
+            // Store references based on URL
+            if let url = storeDescription.url,
+               let store = self?.container.persistentStoreCoordinator.persistentStore(for: url) {
+                if url.lastPathComponent.contains("shared") {
+                    self?.sharedStore = store
+                    print("[PersistenceController] Loaded shared store: \(url.lastPathComponent)")
+                } else {
+                    self?.privateStore = store
+                    print("[PersistenceController] Loaded private store: \(url.lastPathComponent)")
+                }
             }
         }
 
@@ -168,4 +210,122 @@ final class PersistenceController: ObservableObject {
 
         return controller
     }()
+
+    // MARK: - CloudKit Sharing Helpers
+
+    /// Check if a managed object is shared via CloudKit
+    func isShared(object: NSManagedObject) -> Bool {
+        isShared(objectID: object.objectID)
+    }
+
+    /// Check if an object ID is shared via CloudKit
+    func isShared(objectID: NSManagedObjectID) -> Bool {
+        var isShared = false
+        if let persistentStore = objectID.persistentStore {
+            if persistentStore == sharedStore {
+                isShared = true
+            } else {
+                do {
+                    let shares = try container.fetchShares(matching: [objectID])
+                    isShared = !shares.isEmpty
+                } catch {
+                    print("Failed to fetch shares for object: \(error)")
+                }
+            }
+        }
+        return isShared
+    }
+
+    /// Get the CKShare for a managed object, if one exists
+    func share(for object: NSManagedObject) -> CKShare? {
+        do {
+            let shares = try container.fetchShares(matching: [object.objectID])
+            return shares[object.objectID]
+        } catch {
+            print("Failed to fetch share for object: \(error)")
+            return nil
+        }
+    }
+
+    /// Get participants for a shared object
+    func participants(for object: NSManagedObject) -> [CKShare.Participant] {
+        guard let share = share(for: object) else { return [] }
+        return share.participants
+    }
+
+    /// Check if the current user can edit the object
+    func canEdit(object: NSManagedObject) -> Bool {
+        // If not shared, owner can always edit
+        guard isShared(object: object) else { return true }
+
+        // If shared, check participant permission
+        if let share = share(for: object),
+           let currentUser = share.currentUserParticipant {
+            return currentUser.permission == .readWrite
+        }
+
+        // Default to read-only if we can't determine permissions
+        return false
+    }
+
+    /// Check if the current user is the owner of the share
+    func isOwner(of object: NSManagedObject) -> Bool {
+        // If not shared, user owns it
+        guard isShared(object: object) else { return true }
+
+        // If shared, check if user is owner
+        if let share = share(for: object),
+           let currentUser = share.currentUserParticipant {
+            return currentUser.role == .owner
+        }
+
+        return false
+    }
+
+    /// Get the persistent store for an object
+    func persistentStore(for object: NSManagedObject) -> NSPersistentStore? {
+        return object.objectID.persistentStore
+    }
+
+    /// Check if an object is from the shared store (i.e., shared with us by someone else)
+    /// This is different from isShared - isFromSharedStore means we received this via a share,
+    /// while isShared means we may have shared it or received it.
+    func isFromSharedStore(object: NSManagedObject) -> Bool {
+        guard let persistentStore = object.objectID.persistentStore else { return false }
+        return persistentStore == sharedStore
+    }
+
+    /// Check if a Memory is from the shared store
+    func isFromSharedStore(memory: Memory) -> Bool {
+        return isFromSharedStore(object: memory)
+    }
+
+    /// Mark the shared store as ready for access.
+    /// Call this after allowing time for CloudKit to initialize.
+    func markSharedStoreReady() {
+        DispatchQueue.main.async {
+            self.isSharedStoreReady = true
+            print("[PersistenceController] Shared store marked as ready")
+        }
+    }
+
+    /// Check if a managed object is safe to access.
+    /// Returns false for shared store objects until isSharedStoreReady is true.
+    func isObjectAccessible(_ object: NSManagedObject) -> Bool {
+        // Must have a managed object context
+        guard object.managedObjectContext != nil else { return false }
+
+        // Must have a valid persistent store
+        guard let persistentStore = object.objectID.persistentStore else { return false }
+
+        // Temporary objects are always accessible
+        if object.objectID.isTemporaryID { return true }
+
+        // For shared store objects, check if the shared store is ready
+        if persistentStore == sharedStore && !isSharedStoreReady {
+            return false
+        }
+
+        return true
+    }
 }

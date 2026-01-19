@@ -18,80 +18,91 @@ struct MemoryDetailView: View {
     @State private var isRetagging = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: themeManager.theme.spacingLarge) {
-                // Media
-                mediaView
+        Group {
+            if memory.isAccessible {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: themeManager.theme.spacingLarge) {
+                        // Media
+                        mediaView
 
-                // Info Section
-                VStack(alignment: .leading, spacing: themeManager.theme.spacingMedium) {
-                    // Title
-                    if let title = memory.title, !title.isEmpty {
-                        Text(title)
-                            .font(themeManager.theme.titleFont)
-                            .foregroundStyle(themeManager.theme.textPrimary)
-                    }
+                        // Info Section
+                        VStack(alignment: .leading, spacing: themeManager.theme.spacingMedium) {
+                            // Title
+                            if let title = memory.title, !title.isEmpty {
+                                Text(title)
+                                    .font(themeManager.theme.titleFont)
+                                    .foregroundStyle(themeManager.theme.textPrimary)
+                            }
 
-                    // Metadata
-                    metadataSection
+                            // Metadata
+                            metadataSection
 
-                    // Notes
-                    if let notes = memory.notes, !notes.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Notes")
-                                .font(themeManager.theme.headlineFont)
-                                .foregroundStyle(themeManager.theme.textPrimary)
+                            // Notes
+                            if let notes = memory.notes, !notes.isEmpty {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Notes")
+                                        .font(themeManager.theme.headlineFont)
+                                        .foregroundStyle(themeManager.theme.textPrimary)
 
-                            Text(notes)
-                                .font(themeManager.theme.bodyFont)
-                                .foregroundStyle(themeManager.theme.textSecondary)
+                                    Text(notes)
+                                        .font(themeManager.theme.bodyFont)
+                                        .foregroundStyle(themeManager.theme.textSecondary)
+                                }
+                            }
+
+                            // Tags (always show to allow adding)
+                            tagsSection
+
+                            // Extracted Text
+                            if let extractedText = memory.extractedText, !extractedText.isEmpty {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Extracted Text")
+                                        .font(themeManager.theme.headlineFont)
+                                        .foregroundStyle(themeManager.theme.textPrimary)
+
+                                    Text(extractedText)
+                                        .font(themeManager.theme.bodyFont)
+                                        .foregroundStyle(themeManager.theme.textSecondary)
+                                        .padding()
+                                        .background(themeManager.theme.surfaceColor)
+                                        .clipShape(RoundedRectangle(cornerRadius: themeManager.theme.cornerRadiusSmall))
+                                }
+                            }
+
+                            // Transcription
+                            if let transcription = memory.transcription, !transcription.isEmpty {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Transcription")
+                                        .font(themeManager.theme.headlineFont)
+                                        .foregroundStyle(themeManager.theme.textPrimary)
+
+                                    Text(transcription)
+                                        .font(themeManager.theme.bodyFont)
+                                        .foregroundStyle(themeManager.theme.textSecondary)
+                                        .padding()
+                                        .background(themeManager.theme.surfaceColor)
+                                        .clipShape(RoundedRectangle(cornerRadius: themeManager.theme.cornerRadiusSmall))
+                                }
+                            }
+
+                            // Linked Event
+                            if let event = memory.linkedEvent {
+                                linkedEventSection(event)
+                            }
                         }
-                    }
-
-                    // Tags (always show to allow adding)
-                    tagsSection
-
-                    // Extracted Text
-                    if let extractedText = memory.extractedText, !extractedText.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Extracted Text")
-                                .font(themeManager.theme.headlineFont)
-                                .foregroundStyle(themeManager.theme.textPrimary)
-
-                            Text(extractedText)
-                                .font(themeManager.theme.bodyFont)
-                                .foregroundStyle(themeManager.theme.textSecondary)
-                                .padding()
-                                .background(themeManager.theme.surfaceColor)
-                                .clipShape(RoundedRectangle(cornerRadius: themeManager.theme.cornerRadiusSmall))
-                        }
-                    }
-
-                    // Transcription
-                    if let transcription = memory.transcription, !transcription.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Transcription")
-                                .font(themeManager.theme.headlineFont)
-                                .foregroundStyle(themeManager.theme.textPrimary)
-
-                            Text(transcription)
-                                .font(themeManager.theme.bodyFont)
-                                .foregroundStyle(themeManager.theme.textSecondary)
-                                .padding()
-                                .background(themeManager.theme.surfaceColor)
-                                .clipShape(RoundedRectangle(cornerRadius: themeManager.theme.cornerRadiusSmall))
-                        }
-                    }
-
-                    // Linked Event
-                    if let event = memory.linkedEvent {
-                        linkedEventSection(event)
+                        .padding(.horizontal)
                     }
                 }
-                .padding(.horizontal)
+            } else {
+                ContentUnavailableView(
+                    "Memory Unavailable",
+                    systemImage: "exclamationmark.icloud",
+                    description: Text("This memory is not available on this device.")
+                )
             }
         }
         .background(themeManager.theme.backgroundColor)
+        .navigationTitle(memory.isAccessible ? (memory.title ?? "Memory") : "Memory")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -149,13 +160,28 @@ struct MemoryDetailView: View {
         }
     }
 
+    @State private var loadedPhoto: UIImage?
+    @State private var isLoadingPhoto = false
+
     private var photoView: some View {
         Group {
-            if let mediaPath = memory.mediaPath,
-               let image = MediaManager.shared.loadImage(filename: mediaPath, type: .photo) {
+            if let image = loadedPhoto {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
+            } else if isLoadingPhoto {
+                ZStack {
+                    Rectangle()
+                        .fill(themeManager.theme.surfaceColor)
+
+                    VStack(spacing: 12) {
+                        ProgressView()
+                        Text("Loading...")
+                            .font(themeManager.theme.captionFont)
+                            .foregroundStyle(themeManager.theme.textSecondary)
+                    }
+                }
+                .aspectRatio(4/3, contentMode: .fit)
             } else {
                 ZStack {
                     Rectangle()
@@ -168,45 +194,126 @@ struct MemoryDetailView: View {
                 .aspectRatio(4/3, contentMode: .fit)
             }
         }
+        .task {
+            await loadPhoto()
+        }
+    }
+
+    private func loadPhoto() async {
+        // First try synchronous loading (local media)
+        if let mediaPath = memory.mediaPath,
+           let image = MediaManager.shared.loadImage(filename: mediaPath, type: .photo) {
+            loadedPhoto = image
+            return
+        }
+
+        // Try async loading (for shared media)
+        isLoadingPhoto = true
+        defer { isLoadingPhoto = false }
+
+        if let image = await MediaManager.shared.loadImage(for: memory) {
+            loadedPhoto = image
+        }
     }
 
     @State private var showVideoPlayer = false
+    @State private var loadedVideoThumbnail: UIImage?
+    @State private var loadedVideoURL: URL?
+    @State private var isLoadingVideo = false
 
     private var videoView: some View {
         ZStack {
             // Show thumbnail or placeholder
-            if let thumbnailPath = memory.thumbnailPath,
-               let image = MediaManager.shared.loadThumbnail(filename: thumbnailPath) {
+            if let image = loadedVideoThumbnail {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
+            } else if isLoadingVideo {
+                ZStack {
+                    Rectangle()
+                        .fill(themeManager.theme.surfaceColor)
+                    VStack(spacing: 12) {
+                        ProgressView()
+                        Text("Loading video...")
+                            .font(themeManager.theme.captionFont)
+                            .foregroundStyle(themeManager.theme.textSecondary)
+                    }
+                }
             } else {
                 Rectangle()
                     .fill(themeManager.theme.surfaceColor)
             }
 
-            // Play button overlay
-            VStack(spacing: 12) {
-                Image(systemName: "play.circle.fill")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.white.opacity(0.9))
-                    .shadow(radius: 4)
+            // Play button overlay (only show if not loading)
+            if !isLoadingVideo {
+                VStack(spacing: 12) {
+                    Image(systemName: "play.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundStyle(.white.opacity(0.9))
+                        .shadow(radius: 4)
 
-                Text("Tap to play")
-                    .font(themeManager.theme.captionFont)
-                    .foregroundStyle(.white)
-                    .shadow(radius: 2)
+                    Text("Tap to play")
+                        .font(themeManager.theme.captionFont)
+                        .foregroundStyle(.white)
+                        .shadow(radius: 2)
+                }
             }
         }
         .aspectRatio(16/9, contentMode: .fit)
         .clipShape(RoundedRectangle(cornerRadius: themeManager.theme.cornerRadiusMedium))
         .onTapGesture {
-            showVideoPlayer = true
+            Task {
+                await playVideo()
+            }
         }
         .fullScreenCover(isPresented: $showVideoPlayer) {
-            if let mediaPath = memory.mediaPath {
-                VideoPlayerView(videoURL: MediaManager.shared.mediaURL(filename: mediaPath, type: .video))
+            if let videoURL = loadedVideoURL {
+                VideoPlayerView(videoURL: videoURL)
             }
+        }
+        .task {
+            await loadVideoThumbnail()
+        }
+    }
+
+    private func loadVideoThumbnail() async {
+        // Priority 1: Check Core Data thumbnailData (works for shared memories via CloudKit sync)
+        if let thumbnailData = memory.thumbnailData, let image = UIImage(data: thumbnailData) {
+            loadedVideoThumbnail = image
+            return
+        }
+
+        // Priority 2: Try synchronous loading from local file
+        if let thumbnailPath = memory.thumbnailPath,
+           let image = MediaManager.shared.loadThumbnail(filename: thumbnailPath) {
+            loadedVideoThumbnail = image
+            return
+        }
+
+        // Priority 3: Try async loading (for shared media, CloudKit fallback)
+        if let image = await MediaManager.shared.loadThumbnail(for: memory) {
+            loadedVideoThumbnail = image
+        }
+    }
+
+    private func playVideo() async {
+        // Check if we already have the video URL
+        if let mediaPath = memory.mediaPath {
+            let localURL = MediaManager.shared.mediaURL(filename: mediaPath, type: .video)
+            if FileManager.default.fileExists(atPath: localURL.path) {
+                loadedVideoURL = localURL
+                showVideoPlayer = true
+                return
+            }
+        }
+
+        // Need to fetch from CloudKit
+        isLoadingVideo = true
+        defer { isLoadingVideo = false }
+
+        if let videoURL = await MediaManager.shared.loadVideoURL(for: memory) {
+            loadedVideoURL = videoURL
+            showVideoPlayer = true
         }
     }
 

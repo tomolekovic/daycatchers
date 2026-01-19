@@ -42,6 +42,7 @@
         <attribute name="mediaSyncStatus" optional="YES" attributeType="String" defaultValueString="pending"/>
         <attribute name="notes" optional="YES" attributeType="String"/>
         <attribute name="syncErrorMessage" optional="YES" attributeType="String"/>
+        <attribute name="thumbnailData" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
         <attribute name="thumbnailPath" optional="YES" attributeType="String"/>
         <attribute name="thumbnailSyncStatus" optional="YES" attributeType="String" defaultValueString="pending"/>
         <attribute name="title" optional="YES" attributeType="String"/>

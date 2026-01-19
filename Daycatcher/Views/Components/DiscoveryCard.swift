@@ -126,26 +126,28 @@ struct OnThisDayMemoryThumbnail: View {
     let theme: Theme
 
     var body: some View {
-        ZStack {
-            if let thumbnailPath = memory.thumbnailPath,
-               let image = MediaManager.shared.loadThumbnail(filename: thumbnailPath) {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else if memory.memoryType == .photo,
-                      let mediaPath = memory.mediaPath,
-                      let image = MediaManager.shared.loadImage(filename: mediaPath, type: .photo) {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                theme.surfaceColor
-                Image(systemName: memory.memoryType.icon)
-                    .foregroundStyle(memory.memoryType.color.opacity(0.5))
+        if memory.isAccessible {
+            ZStack {
+                if let thumbnailPath = memory.thumbnailPath,
+                   let image = MediaManager.shared.loadThumbnail(filename: thumbnailPath) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                } else if memory.memoryType == .photo,
+                          let mediaPath = memory.mediaPath,
+                          let image = MediaManager.shared.loadImage(filename: mediaPath, type: .photo) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    theme.surfaceColor
+                    Image(systemName: memory.memoryType.icon)
+                        .foregroundStyle(memory.memoryType.color.opacity(0.5))
+                }
             }
+            .frame(width: 60, height: 60)
+            .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusSmall))
         }
-        .frame(width: 60, height: 60)
-        .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusSmall))
     }
 }
 
@@ -245,57 +247,59 @@ struct RediscoverMemoryContent: View {
     let theme: Theme
 
     var body: some View {
-        HStack(spacing: theme.spacingMedium) {
-            // Thumbnail
-            ZStack {
-                RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
-                    .fill(theme.backgroundColor)
+        if memory.isAccessible {
+            HStack(spacing: theme.spacingMedium) {
+                // Thumbnail
+                ZStack {
+                    RoundedRectangle(cornerRadius: theme.cornerRadiusSmall)
+                        .fill(theme.backgroundColor)
 
-                if let thumbnailPath = memory.thumbnailPath,
-                   let image = MediaManager.shared.loadThumbnail(filename: thumbnailPath) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                } else if memory.memoryType == .photo,
-                          let mediaPath = memory.mediaPath,
-                          let image = MediaManager.shared.loadImage(filename: mediaPath, type: .photo) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    Image(systemName: memory.memoryType.icon)
-                        .font(.title)
-                        .foregroundStyle(memory.memoryType.color.opacity(0.5))
+                    if let thumbnailPath = memory.thumbnailPath,
+                       let image = MediaManager.shared.loadThumbnail(filename: thumbnailPath) {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                    } else if memory.memoryType == .photo,
+                              let mediaPath = memory.mediaPath,
+                              let image = MediaManager.shared.loadImage(filename: mediaPath, type: .photo) {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        Image(systemName: memory.memoryType.icon)
+                            .font(.title)
+                            .foregroundStyle(memory.memoryType.color.opacity(0.5))
+                    }
                 }
+                .frame(width: 80, height: 80)
+                .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusSmall))
+
+                // Details
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(memory.title ?? "Memory")
+                        .font(theme.bodyFont)
+                        .foregroundStyle(theme.textPrimary)
+                        .lineLimit(2)
+
+                    if let lovedOne = memory.lovedOne {
+                        Text(lovedOne.name ?? "")
+                            .font(theme.captionFont)
+                            .foregroundStyle(theme.textSecondary)
+                    }
+
+                    if let date = memory.captureDate {
+                        Text(timeAgoText(from: date))
+                            .font(theme.captionFont)
+                            .foregroundStyle(theme.primaryColor)
+                    }
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(theme.textSecondary)
             }
-            .frame(width: 80, height: 80)
-            .clipShape(RoundedRectangle(cornerRadius: theme.cornerRadiusSmall))
-
-            // Details
-            VStack(alignment: .leading, spacing: 4) {
-                Text(memory.title ?? "Memory")
-                    .font(theme.bodyFont)
-                    .foregroundStyle(theme.textPrimary)
-                    .lineLimit(2)
-
-                if let lovedOne = memory.lovedOne {
-                    Text(lovedOne.name ?? "")
-                        .font(theme.captionFont)
-                        .foregroundStyle(theme.textSecondary)
-                }
-
-                if let date = memory.captureDate {
-                    Text(timeAgoText(from: date))
-                        .font(theme.captionFont)
-                        .foregroundStyle(theme.primaryColor)
-                }
-            }
-
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundStyle(theme.textSecondary)
         }
     }
 

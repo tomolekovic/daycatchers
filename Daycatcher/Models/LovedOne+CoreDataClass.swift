@@ -65,9 +65,10 @@ public class LovedOne: NSManagedObject {
         return nil
     }
 
-    /// Memory count for this loved one
+    /// Memory count for this loved one (safe for shared store objects)
     var memoryCount: Int {
-        memories?.count ?? 0
+        guard let memoriesSet = memories as? Set<Memory> else { return 0 }
+        return memoriesSet.filter { $0.isAccessible }.count
     }
 
     /// Event count for this loved one

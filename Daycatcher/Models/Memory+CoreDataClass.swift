@@ -159,6 +159,7 @@ extension Memory {
     // MARK: - Sync Properties
     @NSManaged public var mediaSyncStatus: String?
     @NSManaged public var thumbnailSyncStatus: String?
+    @NSManaged public var thumbnailData: Data?  // Stored in Core Data with external storage for CloudKit sync
     @NSManaged public var cloudAssetRecordName: String?
     @NSManaged public var cloudThumbnailRecordName: String?
     @NSManaged public var lastSyncAttempt: Date?
@@ -184,3 +185,19 @@ extension Memory {
 }
 
 extension Memory: Identifiable { }
+
+// MARK: - Safe Accessibility Check
+
+extension Memory {
+    /// Check if this Memory object is accessible and its data can be read.
+    /// Returns false for faults that cannot be fulfilled (e.g., from shared store).
+    ///
+    /// IMPORTANT: This implementation does NOT use `existingObject(with:)` because
+    /// that method throws an Objective-C exception (NSObjectInaccessibleException)
+    /// that CANNOT be caught by Swift's do-try-catch mechanism.
+    var isAccessible: Bool {
+        // Use PersistenceController's centralized accessibility check
+        // This handles shared store readiness and prevents faults on inaccessible objects
+        return PersistenceController.shared.isObjectAccessible(self)
+    }
+}

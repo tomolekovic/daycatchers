@@ -54,9 +54,13 @@
 		E01000001000000100000046 /* PDFExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000046 /* PDFExportService.swift */; };
 		E01000001000000100000047 /* BackupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000047 /* BackupService.swift */; };
 		E01000001000000100000048 /* BackupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000048 /* BackupView.swift */; };
+		E01000001000000100000049 /* SharingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000049 /* SharingManager.swift */; };
+		E01000001000000100000050 /* CloudSharingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000050 /* CloudSharingView.swift */; };
+		E01000001000000100000051 /* SharedProfilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000051 /* SharedProfilesView.swift */; };
 		E0T000001000000100000001 /* EnumTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0T000002000000100000001 /* EnumTests.swift */; };
 		E0T000001000000100000002 /* MediaManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0T000002000000100000002 /* MediaManagerTests.swift */; };
 		E0T000001000000100000003 /* MediaSyncManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0T000002000000100000003 /* MediaSyncManagerTests.swift */; };
+		E0T000001000000100000004 /* SharingManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0T000002000000100000004 /* SharingManagerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -117,11 +121,16 @@
 		E02000001000000100000046 /* PDFExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFExportService.swift; sourceTree = "<group>"; };
 		E02000001000000100000047 /* BackupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupService.swift; sourceTree = "<group>"; };
 		E02000001000000100000048 /* BackupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupView.swift; sourceTree = "<group>"; };
+		E02000001000000100000049 /* SharingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharingManager.swift; sourceTree = "<group>"; };
+		E02000001000000100000050 /* CloudSharingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSharingView.swift; sourceTree = "<group>"; };
+		E02000001000000100000051 /* SharedProfilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedProfilesView.swift; sourceTree = "<group>"; };
 		E03000001000000100000001 /* Daycatcher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Daycatcher.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E03000001000000100000002 /* Daycatcher.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Daycatcher.entitlements; sourceTree = "<group>"; };
+		E03000001000000100000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E0T000002000000100000001 /* EnumTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnumTests.swift; sourceTree = "<group>"; };
 		E0T000002000000100000002 /* MediaManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaManagerTests.swift; sourceTree = "<group>"; };
 		E0T000002000000100000003 /* MediaSyncManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSyncManagerTests.swift; sourceTree = "<group>"; };
+		E0T000002000000100000004 /* SharingManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharingManagerTests.swift; sourceTree = "<group>"; };
 		E0T000004000000100000001 /* DaycatcherTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DaycatcherTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -156,6 +165,7 @@
 			isa = PBXGroup;
 			children = (
 				E03000001000000100000002 /* Daycatcher.entitlements */,
+				E03000001000000100000003 /* Info.plist */,
 				E05000001000000100000004 /* App */,
 				E05000001000000100000005 /* Models */,
 				E05000001000000100000006 /* Views */,
@@ -236,6 +246,7 @@
 				E02000001000000100000046 /* PDFExportService.swift */,
 				E02000001000000100000026 /* PermissionsManager.swift */,
 				E02000001000000100000038 /* SearchHistoryManager.swift */,
+				E02000001000000100000049 /* SharingManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -301,6 +312,7 @@
 			children = (
 				E02000001000000100000048 /* BackupView.swift */,
 				E02000001000000100000025 /* SettingsView.swift */,
+				E02000001000000100000051 /* SharedProfilesView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -308,6 +320,7 @@
 		E05000001000000100000015 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				E02000001000000100000050 /* CloudSharingView.swift */,
 				E02000001000000100000034 /* SyncStatusBadge.swift */,
 				E02000001000000100000037 /* DiscoveryCard.swift */,
 				E02000001000000100000039 /* SearchSuggestionsView.swift */,
@@ -334,6 +347,7 @@
 				E0T000002000000100000001 /* EnumTests.swift */,
 				E0T000002000000100000002 /* MediaManagerTests.swift */,
 				E0T000002000000100000003 /* MediaSyncManagerTests.swift */,
+				E0T000002000000100000004 /* SharingManagerTests.swift */,
 			);
 			path = DaycatcherTests;
 			sourceTree = "<group>";
@@ -483,6 +497,9 @@
 				E01000001000000100000046 /* PDFExportService.swift in Sources */,
 				E01000001000000100000047 /* BackupService.swift in Sources */,
 				E01000001000000100000048 /* BackupView.swift in Sources */,
+				E01000001000000100000049 /* SharingManager.swift in Sources */,
+				E01000001000000100000050 /* CloudSharingView.swift in Sources */,
+				E01000001000000100000051 /* SharedProfilesView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -493,6 +510,7 @@
 				E0T000001000000100000001 /* EnumTests.swift in Sources */,
 				E0T000001000000100000002 /* MediaManagerTests.swift in Sources */,
 				E0T000001000000100000003 /* MediaSyncManagerTests.swift in Sources */,
+				E0T000001000000100000004 /* SharingManagerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -636,17 +654,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = PPJ6MUG34F;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Daycatcher;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Daycatcher needs access to your camera to capture photos and videos.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Daycatcher needs access to your microphone to record audio memories.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Daycatcher needs access to your photo library to import photos and videos.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Daycatcher/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -672,17 +681,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = PPJ6MUG34F;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Daycatcher;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Daycatcher needs access to your camera to capture photos and videos.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Daycatcher needs access to your microphone to record audio memories.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Daycatcher needs access to your photo library to import photos and videos.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Daycatcher/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

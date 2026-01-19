@@ -226,11 +226,17 @@ struct CaptureFlowContainer: View {
         // Generate and save thumbnail
         let thumbnailFilename = MediaManager.shared.saveThumbnail(image: image)
 
+        // Generate thumbnail data for Core Data (enables CloudKit sync for shared memories)
+        let thumbnailSize = CGSize(width: 300, height: 300)
+        let resizedThumbnail = image.resized(to: thumbnailSize)
+        let thumbnailData = resizedThumbnail.jpegData(compressionQuality: 0.7)
+
         // Create memory record
         return try await createMemory(
             type: .photo,
             mediaPath: filename,
-            thumbnailPath: thumbnailFilename
+            thumbnailPath: thumbnailFilename,
+            thumbnailData: thumbnailData
         )
     }
 
@@ -244,9 +250,15 @@ struct CaptureFlowContainer: View {
         let savedVideoURL = MediaManager.shared.mediaURL(filename: filename, type: .video)
         var thumbnailFilename: String?
         var thumbnailImage: UIImage?
+        var thumbnailData: Data?
         if let thumbnail = MediaManager.shared.generateVideoThumbnail(from: savedVideoURL) {
             thumbnailFilename = MediaManager.shared.saveThumbnail(image: thumbnail)
             thumbnailImage = thumbnail
+
+            // Generate thumbnail data for Core Data (enables CloudKit sync for shared memories)
+            let thumbnailSize = CGSize(width: 300, height: 300)
+            let resizedThumbnail = thumbnail.resized(to: thumbnailSize)
+            thumbnailData = resizedThumbnail.jpegData(compressionQuality: 0.7)
         }
 
         // Clean up temp video file
@@ -256,7 +268,8 @@ struct CaptureFlowContainer: View {
         let memory = try await createMemory(
             type: .video,
             mediaPath: filename,
-            thumbnailPath: thumbnailFilename
+            thumbnailPath: thumbnailFilename,
+            thumbnailData: thumbnailData
         )
 
         return (memory, thumbnailImage)
@@ -294,6 +307,7 @@ struct CaptureFlowContainer: View {
         type: MemoryType,
         mediaPath: String?,
         thumbnailPath: String?,
+        thumbnailData: Data? = nil,
         title: String? = nil,
         notes: String? = nil
     ) async throws -> Memory {
@@ -303,6 +317,7 @@ struct CaptureFlowContainer: View {
             memory.memoryType = type
             memory.mediaPath = mediaPath
             memory.thumbnailPath = thumbnailPath
+            memory.thumbnailData = thumbnailData  // Store for CloudKit sync
             memory.title = title
             memory.notes = notes
             memory.captureDate = Date()
@@ -331,7 +346,20 @@ struct CaptureFlowContainer: View {
         // Queue for upload in the background
         if mediaPath != nil && type != .text {
             Task {
-                await MediaSyncManager.shared.queueUpload(for: memory)
+                // If the LovedOne is already shared, upload media to the share zone
+                // so recipients can access it
+                if let lovedOne = self.lovedOne, lovedOne.isSharedWithFamily {
+                    if let share = PersistenceController.shared.share(for: lovedOne) {
+                        let shareZoneID = share.recordID.zoneID
+                        await MediaSyncManager.shared.uploadMediaToSharedZone(for: memory, zoneID: shareZoneID)
+                    } else {
+                        // Fallback to normal upload if we can't get the share
+                        await MediaSyncManager.shared.queueUpload(for: memory)
+                    }
+                } else {
+                    // Normal upload to private zone for non-shared memories
+                    await MediaSyncManager.shared.queueUpload(for: memory)
+                }
             }
         }
 

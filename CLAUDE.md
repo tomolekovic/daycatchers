@@ -40,7 +40,8 @@ Daycatcher/
 │   ├── Events/                   # Events and reminders
 │   ├── Settings/                 # App settings (includes media sync UI)
 │   │   ├── SettingsView.swift    # Main settings and PDFExportView
-│   │   └── BackupView.swift      # Backup management UI
+│   │   ├── BackupView.swift      # Backup management UI
+│   │   └── SharedProfilesView.swift # Family sharing management
 │   ├── Capture/                  # Memory capture flows
 │   │   ├── PhotoCaptureView.swift
 │   │   ├── VideoCaptureView.swift
@@ -51,7 +52,8 @@ Daycatcher/
 │       ├── SyncStatusBadge.swift # Sync status indicator component
 │       ├── DiscoveryCard.swift   # On This Day and Rediscover cards
 │       ├── SearchSuggestionsView.swift # Search suggestions overlay
-│       └── HighlightedText.swift # Search term highlighting
+│       ├── HighlightedText.swift # Search term highlighting
+│       └── CloudSharingView.swift # UICloudSharingController wrapper
 │   └── Digests/                  # Weekly digest views
 │       ├── DigestsView.swift     # List of weekly digests
 │       └── DigestDetailView.swift # Single digest detail
@@ -67,7 +69,8 @@ Daycatcher/
     ├── AITaggingService.swift    # Vision/NLP auto-tagging
     ├── DigestService.swift       # Weekly digest generation
     ├── PDFExportService.swift    # PDF memory book generation
-    └── BackupService.swift       # Backup and restore functionality
+    ├── BackupService.swift       # Backup and restore functionality
+    └── SharingManager.swift      # CloudKit sharing for family access
 ```
 
 ## Build Commands
@@ -195,8 +198,14 @@ Capture → MediaManager (local save) → Core Data save
    - BackupView for backup management UI
    - Import backup from Files app support
    - PDFExportView with person, date range, and content filters
-9. 🔲 **Offline Mode** - Conflict resolution, sync status UI improvements
-10. 🔲 **Family Sharing** - CKShare + UICloudSharingController (not yet implemented)
+9. ✅ **Family Sharing** - CKShare + UICloudSharingController
+   - SharingManager for CloudKit share management
+   - CloudSharingView wrapping UICloudSharingController
+   - Share button on LovedOneDetailView toolbar
+   - SharedProfilesView in Settings for managing shared profiles
+   - Share acceptance handling in AppDelegate
+   - Participant avatars and status indicators
+10. 🔲 **Offline Mode** - Conflict resolution, sync status UI improvements
 11. 🔲 **Themes & Polish** - Additional themes, animations
 12. 🔲 **Testing & Launch** - UI tests, App Store prep
 

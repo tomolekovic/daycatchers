@@ -2,6 +2,7 @@ import SwiftUI
 import CoreData
 import BackgroundTasks
 import UserNotifications
+import CloudKit
 
 @main
 struct DaycatcherApp: App {
@@ -48,7 +49,12 @@ struct DaycatcherApp: App {
                     await notificationManager.refreshAuthorizationStatus()
                     await notificationManager.updatePendingCount()
 
-                    // Generate any missing weekly digests
+                    // Allow time for CloudKit shared store zone to initialize
+                    // Then mark the shared store as ready for access
+                    try? await Task.sleep(for: .seconds(2))
+                    persistenceController.markSharedStoreReady()
+
+                    // Generate any missing weekly digests (now safe since shared store is ready)
                     await DigestService.shared.generateMissingDigests(in: persistenceController.container.viewContext)
                 }
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
@@ -65,7 +71,29 @@ struct DaycatcherApp: App {
                 .onReceive(NotificationCenter.default.publisher(for: .reschedulebirthday)) { notification in
                     handleBirthdayReschedule(notification)
                 }
+                .onOpenURL { url in
+                    // Handle CloudKit share URLs
+                    handleIncomingURL(url)
+                }
         }
+    }
+
+    // MARK: - URL Handling
+
+    private func handleIncomingURL(_ url: URL) {
+        print("[DaycatcherApp] Received URL: \(url)")
+
+        // Check if this is a CloudKit share URL
+        // CloudKit share URLs typically have the format: https://www.icloud.com/share/...
+        guard url.scheme == "https" || url.scheme == "cloudkit" else {
+            print("[DaycatcherApp] Not a CloudKit URL, ignoring")
+            return
+        }
+
+        // For CloudKit share URLs, the system should automatically call
+        // application(_:userDidAcceptCloudKitShareWith:) on the AppDelegate.
+        // This handler is a backup for any URL-based share acceptance.
+        print("[DaycatcherApp] CloudKit URL detected, system will handle via AppDelegate")
     }
 
     // MARK: - Birthday Rescheduling
@@ -152,5 +180,73 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // Set notification delegate
         UNUserNotificationCenter.current().delegate = NotificationManager.shared
         return true
+    }
+
+    // MARK: - CloudKit Share Acceptance
+
+    func application(
+        _ application: UIApplication,
+        userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata
+    ) {
+        print("[AppDelegate] userDidAcceptCloudKitShareWith called")
+        print("[AppDelegate] Share metadata - containerID: \(cloudKitShareMetadata.containerIdentifier)")
+        print("[AppDelegate] Share metadata - rootRecordID: \(cloudKitShareMetadata.rootRecordID)")
+
+        // Handle share acceptance when user taps a share link
+        Task { @MainActor in
+            do {
+                print("[AppDelegate] Accepting share...")
+                try await SharingManager.shared.acceptShare(from: cloudKitShareMetadata)
+                print("[AppDelegate] Share accepted successfully")
+            } catch {
+                print("[AppDelegate] Failed to accept CloudKit share: \(error)")
+            }
+        }
+    }
+
+    // MARK: - Scene Configuration
+
+    func application(
+        _ application: UIApplication,
+        configurationForConnecting connectingSceneSession: UISceneSession,
+        options: UIScene.ConnectionOptions
+    ) -> UISceneConfiguration {
+        // Check if there's a CloudKit share in the connection options
+        if let cloudKitShareMetadata = options.cloudKitShareMetadata {
+            print("[AppDelegate] Scene connecting with CloudKit share metadata")
+            Task { @MainActor in
+                do {
+                    try await SharingManager.shared.acceptShare(from: cloudKitShareMetadata)
+                } catch {
+                    print("[AppDelegate] Failed to accept share from scene options: \(error)")
+                }
+            }
+        }
+
+        let configuration = UISceneConfiguration(name: nil, sessionRole: connectingSceneSession.role)
+        configuration.delegateClass = SceneDelegate.self
+        return configuration
+    }
+}
+
+// MARK: - SceneDelegate
+
+class SceneDelegate: NSObject, UIWindowSceneDelegate {
+    func windowScene(
+        _ windowScene: UIWindowScene,
+        userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata
+    ) {
+        print("[SceneDelegate] userDidAcceptCloudKitShareWith called")
+        print("[SceneDelegate] Share metadata - containerID: \(cloudKitShareMetadata.containerIdentifier)")
+
+        Task { @MainActor in
+            do {
+                print("[SceneDelegate] Accepting share...")
+                try await SharingManager.shared.acceptShare(from: cloudKitShareMetadata)
+                print("[SceneDelegate] Share accepted successfully")
+            } catch {
+                print("[SceneDelegate] Failed to accept CloudKit share: \(error)")
+            }
+        }
     }
 }

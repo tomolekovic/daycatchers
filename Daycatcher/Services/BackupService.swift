@@ -546,7 +546,7 @@ final class BackupService: ObservableObject {
 
     private func fetchAllMemories(context: NSManagedObjectContext) async throws -> [Memory] {
         let request: NSFetchRequest<Memory> = Memory.fetchRequest()
-        return try context.fetch(request)
+        return try context.fetch(request).filter { $0.isAccessible }
     }
 
     private func fetchAllEvents(context: NSManagedObjectContext) async throws -> [Event] {

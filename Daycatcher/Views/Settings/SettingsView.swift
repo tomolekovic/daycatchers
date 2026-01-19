@@ -26,6 +26,9 @@ struct SettingsView: View {
                 // iCloud Sync
                 syncSection
 
+                // Family Sharing
+                familySharingSection
+
                 // Media Sync
                 mediaSyncSection
 
@@ -127,6 +130,42 @@ struct SettingsView: View {
             Text("iCloud & Sync")
         } footer: {
             Text("Your data is automatically synced across all your devices using iCloud.")
+        }
+    }
+
+    // MARK: - Family Sharing Section
+
+    private var familySharingSection: some View {
+        Section {
+            NavigationLink {
+                SharedProfilesView()
+            } label: {
+                HStack {
+                    Image(systemName: "person.2.fill")
+                        .foregroundStyle(.purple)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Family Sharing")
+
+                        let sharedCount = SharingManager.shared.getSharedLovedOnes().count
+                        if sharedCount > 0 {
+                            Text("\(sharedCount) shared profile\(sharedCount == 1 ? "" : "s")")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("Share profiles with family")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Spacer()
+                }
+            }
+        } header: {
+            Text("Family")
+        } footer: {
+            Text("Share loved ones' profiles with family members so they can view and add memories.")
         }
     }
 
@@ -483,6 +522,10 @@ struct DataStatsRow: View {
     @FetchRequest(sortDescriptors: []) private var memories: FetchedResults<Memory>
     @FetchRequest(sortDescriptors: []) private var events: FetchedResults<Event>
 
+    private var accessibleMemoriesCount: Int {
+        memories.filter { $0.isAccessible }.count
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -495,7 +538,7 @@ struct DataStatsRow: View {
             HStack {
                 Text("Memories")
                 Spacer()
-                Text("\(memories.count)")
+                Text("\(accessibleMemoriesCount)")
                     .foregroundStyle(.secondary)
             }
 

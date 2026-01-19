@@ -100,20 +100,26 @@ class DigestService: ObservableObject {
 
     /// Generate a summary text for the week's memories
     private func generateSummary(for memories: [Memory], weekStart: Date) -> String {
+        // Filter to only accessible memories
+        let accessibleMemories = memories.filter { $0.isAccessible }
+        guard !accessibleMemories.isEmpty else {
+            return "No memories available for this week."
+        }
+
         let calendar = Calendar.current
 
         // Count by type
-        let photoCount = memories.filter { $0.memoryType == .photo }.count
-        let videoCount = memories.filter { $0.memoryType == .video }.count
-        let audioCount = memories.filter { $0.memoryType == .audio }.count
-        let textCount = memories.filter { $0.memoryType == .text }.count
+        let photoCount = accessibleMemories.filter { $0.memoryType == .photo }.count
+        let videoCount = accessibleMemories.filter { $0.memoryType == .video }.count
+        let audioCount = accessibleMemories.filter { $0.memoryType == .audio }.count
+        let textCount = accessibleMemories.filter { $0.memoryType == .text }.count
 
         // Get unique loved ones
-        let lovedOneNames = Set(memories.compactMap { $0.lovedOne?.name })
+        let lovedOneNames = Set(accessibleMemories.compactMap { $0.lovedOne?.name })
 
         // Get unique tags
         var allTags: Set<String> = []
-        for memory in memories {
+        for memory in accessibleMemories {
             for tag in memory.tagsArray {
                 if let name = tag.name {
                     allTags.insert(name)
@@ -137,7 +143,7 @@ class DigestService: ObservableObject {
         if audioCount > 0 { typeCounts.append("\(audioCount) audio note\(audioCount == 1 ? "" : "s")") }
         if textCount > 0 { typeCounts.append("\(textCount) text note\(textCount == 1 ? "" : "s")") }
 
-        let totalCount = memories.count
+        let totalCount = accessibleMemories.count
         summaryParts.append("You captured \(totalCount) memor\(totalCount == 1 ? "y" : "ies") this week: \(typeCounts.joined(separator: ", ")).")
 
         // People mentioned
@@ -169,8 +175,11 @@ class DigestService: ObservableObject {
 
     /// Select the most interesting memories to highlight
     private func selectHighlightedMemories(from memories: [Memory], maxCount: Int = 5) -> [UUID] {
+        // Filter to only accessible memories
+        let accessibleMemories = memories.filter { $0.isAccessible }
+
         // Score each memory based on interestingness
-        let scored = memories.compactMap { memory -> (Memory, Int)? in
+        let scored = accessibleMemories.compactMap { memory -> (Memory, Int)? in
             guard let id = memory.id else { return nil }
 
             var score = 0
@@ -212,8 +221,14 @@ class DigestService: ObservableObject {
             let request: NSFetchRequest<Memory> = Memory.fetchRequest()
             request.sortDescriptors = [NSSortDescriptor(keyPath: \Memory.captureDate, ascending: true)]
 
-            guard let memories = try? context.fetch(request),
-                  let earliest = memories.first?.captureDate,
+            guard let allMemories = try? context.fetch(request) else {
+                return []
+            }
+
+            // Filter to only accessible memories
+            let memories = allMemories.filter { $0.isAccessible }
+
+            guard let earliest = memories.first?.captureDate,
                   let latest = memories.last?.captureDate else {
                 return []
             }
@@ -267,7 +282,8 @@ class DigestService: ObservableObject {
             )
             request.sortDescriptors = [NSSortDescriptor(keyPath: \Memory.captureDate, ascending: true)]
 
-            return (try? context.fetch(request)) ?? []
+            let results = (try? context.fetch(request)) ?? []
+            return results.filter { $0.isAccessible }
         }
     }
 
@@ -318,7 +334,8 @@ class DigestService: ObservableObject {
             let request: NSFetchRequest<Memory> = Memory.fetchRequest()
             request.predicate = NSPredicate(format: "id IN %@", ids)
 
-            return (try? context.fetch(request)) ?? []
+            let results = (try? context.fetch(request)) ?? []
+            return results.filter { $0.isAccessible }
         }
     }
 

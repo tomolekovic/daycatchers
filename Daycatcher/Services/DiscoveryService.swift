@@ -25,8 +25,11 @@ class DiscoveryService {
 
         guard let allMemories = try? context.fetch(request) else { return [] }
 
+        // Filter to only accessible memories
+        let accessibleMemories = allMemories.filter { $0.isAccessible }
+
         // Filter memories from the same month and day
-        let matchingMemories = allMemories.filter { memory in
+        let matchingMemories = accessibleMemories.filter { memory in
             guard let captureDate = memory.captureDate else { return false }
             let memoryComponents = calendar.dateComponents([.month, .day, .year], from: captureDate)
             let currentYear = calendar.component(.year, from: date)
@@ -62,20 +65,23 @@ class DiscoveryService {
         let request: NSFetchRequest<Memory> = Memory.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(keyPath: \Memory.captureDate, ascending: false)]
 
-        guard var allMemories = try? context.fetch(request), !allMemories.isEmpty else {
+        guard let allMemories = try? context.fetch(request), !allMemories.isEmpty else {
             return nil
         }
 
+        // Filter to only accessible memories
+        var accessibleMemories = allMemories.filter { $0.isAccessible }
+
         // Exclude specified memory
         if let excludedId = excludedId {
-            allMemories = allMemories.filter { $0.id != excludedId }
+            accessibleMemories = accessibleMemories.filter { $0.id != excludedId }
         }
 
-        guard !allMemories.isEmpty else { return nil }
+        guard !accessibleMemories.isEmpty else { return nil }
 
         // Pick a random memory
-        let randomIndex = Int.random(in: 0..<allMemories.count)
-        return allMemories[randomIndex]
+        let randomIndex = Int.random(in: 0..<accessibleMemories.count)
+        return accessibleMemories[randomIndex]
     }
 
     /// Returns a random memory from at least a specified number of days ago
@@ -92,20 +98,23 @@ class DiscoveryService {
         request.predicate = NSPredicate(format: "captureDate < %@", cutoffDate as NSDate)
         request.sortDescriptors = [NSSortDescriptor(keyPath: \Memory.captureDate, ascending: false)]
 
-        guard var memories = try? context.fetch(request), !memories.isEmpty else {
+        guard let fetchedMemories = try? context.fetch(request), !fetchedMemories.isEmpty else {
             // Fall back to any random memory if no old memories exist
             return randomMemory(in: context, excluding: excludedId)
         }
 
+        // Filter to only accessible memories
+        var accessibleMemories = fetchedMemories.filter { $0.isAccessible }
+
         // Exclude specified memory
         if let excludedId = excludedId {
-            memories = memories.filter { $0.id != excludedId }
+            accessibleMemories = accessibleMemories.filter { $0.id != excludedId }
         }
 
-        guard !memories.isEmpty else { return nil }
+        guard !accessibleMemories.isEmpty else { return nil }
 
-        let randomIndex = Int.random(in: 0..<memories.count)
-        return memories[randomIndex]
+        let randomIndex = Int.random(in: 0..<accessibleMemories.count)
+        return accessibleMemories[randomIndex]
     }
 
     // MARK: - Seasonal Memories
@@ -121,7 +130,10 @@ class DiscoveryService {
 
         guard let allMemories = try? context.fetch(request) else { return [] }
 
-        return allMemories.filter { memory in
+        // Filter to only accessible memories
+        let accessibleMemories = allMemories.filter { $0.isAccessible }
+
+        return accessibleMemories.filter { memory in
             guard let captureDate = memory.captureDate else { return false }
             return Season.season(for: captureDate) == season
         }
@@ -156,15 +168,15 @@ class DiscoveryService {
     func oldestMemoryDate(in context: NSManagedObjectContext) -> Date? {
         let request: NSFetchRequest<Memory> = Memory.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(keyPath: \Memory.captureDate, ascending: true)]
-        request.fetchLimit = 1
-
-        return try? context.fetch(request).first?.captureDate
+        guard let memories = try? context.fetch(request) else { return nil }
+        return memories.filter { $0.isAccessible }.first?.captureDate
     }
 
     /// Returns the total number of memories
     func totalMemoryCount(in context: NSManagedObjectContext) -> Int {
         let request: NSFetchRequest<Memory> = Memory.fetchRequest()
-        return (try? context.count(for: request)) ?? 0
+        guard let memories = try? context.fetch(request) else { return 0 }
+        return memories.filter { $0.isAccessible }.count
     }
 
     /// Returns the time span description (e.g., "2 years of memories")

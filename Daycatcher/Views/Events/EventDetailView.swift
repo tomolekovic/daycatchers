@@ -288,10 +288,12 @@ struct LinkMemoriesSheet: View {
     private var memories: FetchedResults<Memory>
 
     private var filteredMemories: [Memory] {
+        // Filter to only accessible memories first (avoids Core Data fault crashes)
+        let accessibleMemories = Array(memories).filter { $0.isAccessible }
         if let lovedOne = event.lovedOne {
-            return memories.filter { $0.lovedOne == lovedOne }
+            return accessibleMemories.filter { $0.lovedOne == lovedOne }
         }
-        return Array(memories)
+        return accessibleMemories
     }
 
     private var linkedMemoryIDs: Set<UUID> {

@@ -26,6 +26,7 @@ final class MediaSyncManager: ObservableObject {
 
     private let container: CKContainer
     private let privateDatabase: CKDatabase
+    private let sharedDatabase: CKDatabase
 
     // MARK: - Dependencies
 
@@ -68,6 +69,7 @@ final class MediaSyncManager: ObservableObject {
         // Note: CloudKit operations will fail gracefully in simulator/test environments
         self.container = CKContainer(identifier: PersistenceController.cloudKitContainerIdentifier)
         self.privateDatabase = container.privateCloudDatabase
+        self.sharedDatabase = container.sharedCloudDatabase
 
         uploadQueue.maxConcurrentOperationCount = maxConcurrentUploads
         uploadQueue.qualityOfService = .userInitiated
@@ -321,6 +323,314 @@ final class MediaSyncManager: ObservableObject {
         }
     }
 
+    // MARK: - Shared Zone Upload Operations
+
+    /// Upload media to a shared zone for sharing with other users.
+    /// When a LovedOne is shared via CKShare, media must be uploaded to the share zone
+    /// (not the private zone's default zone) for recipients to access it.
+    func uploadMediaToSharedZone(for memory: Memory, zoneID: CKRecordZone.ID) async {
+        guard let mediaPath = memory.mediaPath else { return }
+        let mediaURL = mediaManager.mediaURL(filename: mediaPath, type: memory.memoryType)
+
+        guard FileManager.default.fileExists(atPath: mediaURL.path) else {
+            print("[MediaSyncManager] Local file not found for shared zone upload: \(mediaURL.path)")
+            return
+        }
+
+        do {
+            // Create record in the SHARE ZONE
+            let recordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
+            let record = CKRecord(recordType: Self.mediaAssetRecordType, recordID: recordID)
+
+            record["memoryID"] = memory.id?.uuidString as CKRecordValue?
+            record["mediaType"] = memory.memoryType.rawValue as CKRecordValue
+            record["asset"] = CKAsset(fileURL: mediaURL)
+            record["originalFilename"] = mediaPath as CKRecordValue
+
+            // Calculate and store file size
+            if let fileSize = try? FileManager.default.attributesOfItem(atPath: mediaURL.path)[.size] as? Int64 {
+                record["fileSize"] = fileSize as CKRecordValue
+            }
+
+            // Upload to private database but in the SHARE ZONE
+            let savedRecord = try await privateDatabase.save(record)
+
+            // Update memory with the shared zone record reference
+            await updateMemoryWithCloudRecord(memory: memory, recordName: savedRecord.recordID.recordName)
+
+            print("[MediaSyncManager] Uploaded media to share zone: \(zoneID), record: \(savedRecord.recordID.recordName)")
+
+            // Also upload thumbnail to share zone if exists
+            if let thumbnailPath = memory.thumbnailPath {
+                await uploadThumbnailToSharedZone(for: memory, thumbnailPath: thumbnailPath, zoneID: zoneID)
+            }
+
+        } catch {
+            print("[MediaSyncManager] Error uploading to share zone: \(error)")
+        }
+    }
+
+    /// Upload thumbnail to a shared zone
+    private func uploadThumbnailToSharedZone(for memory: Memory, thumbnailPath: String, zoneID: CKRecordZone.ID) async {
+        let thumbnailURL = mediaManager.thumbnailURL(filename: thumbnailPath)
+
+        guard FileManager.default.fileExists(atPath: thumbnailURL.path) else {
+            print("[MediaSyncManager] Thumbnail file not found for shared zone upload: \(thumbnailURL.path)")
+            return
+        }
+
+        do {
+            // Create record in the SHARE ZONE
+            let recordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
+            let record = CKRecord(recordType: Self.thumbnailAssetRecordType, recordID: recordID)
+
+            record["memoryID"] = memory.id?.uuidString as CKRecordValue?
+            record["asset"] = CKAsset(fileURL: thumbnailURL)
+            record["originalFilename"] = thumbnailPath as CKRecordValue
+
+            // Upload to private database but in the SHARE ZONE
+            let savedRecord = try await privateDatabase.save(record)
+
+            await updateMemoryWithThumbnailRecord(memory: memory, recordName: savedRecord.recordID.recordName)
+
+            print("[MediaSyncManager] Uploaded thumbnail to share zone: \(zoneID), record: \(savedRecord.recordID.recordName)")
+
+        } catch {
+            print("[MediaSyncManager] Error uploading thumbnail to share zone: \(error)")
+        }
+    }
+
+    /// Upload profile image to a shared zone for a LovedOne
+    func uploadProfileImageToSharedZone(for lovedOne: LovedOne, profileImagePath: String, zoneID: CKRecordZone.ID) async {
+        let profileImageURL = mediaManager.thumbnailURL(filename: profileImagePath)
+
+        guard FileManager.default.fileExists(atPath: profileImageURL.path) else {
+            print("[MediaSyncManager] Profile image not found for shared zone upload: \(profileImageURL.path)")
+            return
+        }
+
+        do {
+            // Create record in the SHARE ZONE
+            let recordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
+            let record = CKRecord(recordType: Self.profileImageAssetRecordType, recordID: recordID)
+
+            record["lovedOneID"] = lovedOne.id?.uuidString as CKRecordValue?
+            record["asset"] = CKAsset(fileURL: profileImageURL)
+            record["originalFilename"] = profileImagePath as CKRecordValue
+
+            // Upload to private database but in the SHARE ZONE
+            let savedRecord = try await privateDatabase.save(record)
+
+            // Update lovedOne with the shared zone record reference
+            await updateLovedOneWithProfileImageRecord(lovedOne: lovedOne, recordName: savedRecord.recordID.recordName)
+
+            print("[MediaSyncManager] Uploaded profile image to share zone: \(zoneID), record: \(savedRecord.recordID.recordName)")
+
+        } catch {
+            print("[MediaSyncManager] Error uploading profile image to share zone: \(error)")
+        }
+    }
+
+    /// Update LovedOne with cloud profile image record name
+    private func updateLovedOneWithProfileImageRecord(lovedOne: LovedOne, recordName: String) async {
+        let context = persistenceController.viewContext
+
+        await context.perform {
+            lovedOne.cloudProfileImageRecordName = recordName
+            lovedOne.profileImageSyncStatus = MediaSyncStatus.synced.rawValue
+            try? context.save()
+        }
+    }
+
+    // MARK: - Shared Media Operations
+
+    /// Fetch media for a shared memory (from the shared database)
+    /// This is used when displaying memories that were shared with the user
+    func fetchSharedMedia(for memory: Memory) async throws -> Data? {
+        print("[MediaSyncManager] fetchSharedMedia called for memory: \(memory.id?.uuidString ?? "unknown")")
+
+        // First check if we already have it locally cached
+        if let mediaPath = memory.mediaPath {
+            let localURL = mediaManager.mediaURL(filename: mediaPath, type: memory.memoryType)
+            if FileManager.default.fileExists(atPath: localURL.path) {
+                print("[MediaSyncManager] Found local cached file: \(localURL.path)")
+                return try Data(contentsOf: localURL)
+            }
+        }
+
+        // For shared media, ALWAYS use query-based fetch
+        // Direct record fetch with CKRecord.ID doesn't work because:
+        // 1. We only store the record name, not the zone ID
+        // 2. CKRecord.ID(recordName:) defaults to _defaultZone
+        // 3. _defaultZone doesn't exist in the shared database
+        // Queries search across all accessible zones automatically
+        print("[MediaSyncManager] Using query-based fetch for shared memory")
+        return try await fetchSharedAssetByMemoryID(memory)
+    }
+
+    /// Fetch shared thumbnail for a memory
+    func fetchSharedThumbnail(for memory: Memory) async throws -> Data? {
+        print("[MediaSyncManager] fetchSharedThumbnail called for memory: \(memory.id?.uuidString ?? "unknown")")
+
+        // First check if we already have it locally cached
+        if let thumbnailPath = memory.thumbnailPath {
+            let localURL = mediaManager.thumbnailURL(filename: thumbnailPath)
+            if FileManager.default.fileExists(atPath: localURL.path) {
+                print("[MediaSyncManager] Found local cached thumbnail: \(localURL.path)")
+                return try Data(contentsOf: localURL)
+            }
+        }
+
+        // For shared thumbnails, ALWAYS use query-based fetch
+        print("[MediaSyncManager] Using query-based fetch for shared thumbnail")
+        return try await fetchSharedThumbnailByMemoryID(memory)
+    }
+
+    /// Fetch all accessible zones from the shared database
+    private func fetchAccessibleSharedZones() async throws -> [CKRecordZone.ID] {
+        print("[MediaSyncManager] Fetching accessible shared zones")
+        let zones = try await sharedDatabase.allRecordZones()
+        print("[MediaSyncManager] Found \(zones.count) shared zones")
+        return zones.map { $0.zoneID }
+    }
+
+    /// Try to find shared asset by memory ID in the shared database
+    private func fetchSharedAssetByMemoryID(_ memory: Memory) async throws -> Data? {
+        guard let memoryID = memory.id?.uuidString else {
+            throw MediaSyncError.assetNotFound
+        }
+
+        print("[MediaSyncManager] Searching shared database for memoryID: \(memoryID)")
+
+        // Get all accessible zones in the shared database
+        let zoneIDs: [CKRecordZone.ID]
+        do {
+            zoneIDs = try await fetchAccessibleSharedZones()
+        } catch {
+            print("[MediaSyncManager] Error fetching shared zones: \(error)")
+            throw error
+        }
+
+        guard !zoneIDs.isEmpty else {
+            print("[MediaSyncManager] No shared zones found")
+            throw MediaSyncError.assetNotFound
+        }
+
+        let predicate = NSPredicate(format: "memoryID == %@", memoryID)
+        let query = CKQuery(recordType: Self.mediaAssetRecordType, predicate: predicate)
+
+        // Query each zone until we find the asset
+        for zoneID in zoneIDs {
+            do {
+                print("[MediaSyncManager] Querying zone: \(zoneID.zoneName)")
+                let (matchResults, _) = try await sharedDatabase.records(
+                    matching: query,
+                    inZoneWith: zoneID,
+                    resultsLimit: 1
+                )
+
+                guard let firstResult = matchResults.first,
+                      case .success(let record) = firstResult.1,
+                      let asset = record["asset"] as? CKAsset,
+                      let assetURL = asset.fileURL else {
+                    continue // Try next zone
+                }
+
+                print("[MediaSyncManager] Found asset in zone: \(zoneID.zoneName)")
+
+                let data = try Data(contentsOf: assetURL)
+
+                // Cache locally
+                let filename = record["originalFilename"] as? String ?? "\(UUID().uuidString).\(memory.memoryType.fileExtension)"
+                let localURL = mediaManager.mediaURL(filename: filename, type: memory.memoryType)
+                try? data.write(to: localURL)
+
+                // Update memory references
+                Task {
+                    await updateMemoryWithCloudRecord(memory: memory, recordName: record.recordID.recordName)
+                    await updateMemoryWithLocalPath(memory: memory, path: filename)
+                }
+
+                return data
+
+            } catch {
+                print("[MediaSyncManager] Error querying zone \(zoneID.zoneName): \(error)")
+                continue // Try next zone
+            }
+        }
+
+        print("[MediaSyncManager] Asset not found in any shared zone")
+        throw MediaSyncError.assetNotFound
+    }
+
+    /// Try to find shared thumbnail by memory ID in the shared database
+    private func fetchSharedThumbnailByMemoryID(_ memory: Memory) async throws -> Data? {
+        guard let memoryID = memory.id?.uuidString else {
+            throw MediaSyncError.assetNotFound
+        }
+
+        print("[MediaSyncManager] Searching shared database for thumbnail with memoryID: \(memoryID)")
+
+        // Get all accessible zones in the shared database
+        let zoneIDs: [CKRecordZone.ID]
+        do {
+            zoneIDs = try await fetchAccessibleSharedZones()
+        } catch {
+            print("[MediaSyncManager] Error fetching shared zones: \(error)")
+            throw error
+        }
+
+        guard !zoneIDs.isEmpty else {
+            print("[MediaSyncManager] No shared zones found")
+            throw MediaSyncError.assetNotFound
+        }
+
+        let predicate = NSPredicate(format: "memoryID == %@", memoryID)
+        let query = CKQuery(recordType: Self.thumbnailAssetRecordType, predicate: predicate)
+
+        // Query each zone until we find the thumbnail
+        for zoneID in zoneIDs {
+            do {
+                print("[MediaSyncManager] Querying zone for thumbnail: \(zoneID.zoneName)")
+                let (matchResults, _) = try await sharedDatabase.records(
+                    matching: query,
+                    inZoneWith: zoneID,
+                    resultsLimit: 1
+                )
+
+                guard let firstResult = matchResults.first,
+                      case .success(let record) = firstResult.1,
+                      let asset = record["asset"] as? CKAsset,
+                      let assetURL = asset.fileURL else {
+                    continue // Try next zone
+                }
+
+                print("[MediaSyncManager] Found thumbnail in zone: \(zoneID.zoneName)")
+
+                let data = try Data(contentsOf: assetURL)
+
+                // Cache locally
+                let filename = record["originalFilename"] as? String ?? "thumb_\(UUID().uuidString).jpg"
+                let localURL = mediaManager.thumbnailURL(filename: filename)
+                try? data.write(to: localURL)
+
+                // Update memory thumbnail path
+                Task {
+                    await updateMemoryWithThumbnailPath(memory: memory, path: filename)
+                }
+
+                return data
+
+            } catch {
+                print("[MediaSyncManager] Error querying zone for thumbnail \(zoneID.zoneName): \(error)")
+                continue // Try next zone
+            }
+        }
+
+        print("[MediaSyncManager] Thumbnail not found in any shared zone")
+        throw MediaSyncError.assetNotFound
+    }
+
     // MARK: - Retry Logic
 
     /// Retry all failed uploads
@@ -336,7 +646,7 @@ final class MediaSyncManager: ObservableObject {
             )
 
             do {
-                let memories = try context.fetch(fetchRequest)
+                let memories = try context.fetch(fetchRequest).filter { $0.isAccessible }
 
                 for memory in memories {
                     Task {
@@ -366,7 +676,7 @@ final class MediaSyncManager: ObservableObject {
         )
 
         do {
-            return try context.fetch(fetchRequest)
+            return try context.fetch(fetchRequest).filter { $0.isAccessible }
         } catch {
             print("Failed to fetch memories needing upload: \(error)")
             return []
@@ -478,7 +788,8 @@ final class MediaSyncManager: ObservableObject {
             )
 
             do {
-                let count = try context.count(for: fetchRequest)
+                let memories = try context.fetch(fetchRequest)
+                let count = memories.filter { $0.isAccessible }.count
                 Task { @MainActor in
                     self.pendingUploads = count
                 }
