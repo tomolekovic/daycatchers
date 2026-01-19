@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreData
 import UserNotifications
+import UIKit
 
 struct SettingsView: View {
     @EnvironmentObject var themeManager: ThemeManager
@@ -15,7 +16,6 @@ struct SettingsView: View {
     @AppStorage("defaultReminderOffset") private var defaultReminderOffset = ReminderOffset.oneDay.rawValue
 
     @State private var showingExportSheet = false
-    @State private var showingBackupSheet = false
 
     var body: some View {
         NavigationStack {
@@ -373,16 +373,20 @@ struct SettingsView: View {
                 Label("Generate PDF Memory Book", systemImage: "book.fill")
             }
 
-            Button(action: {}) {
-                Label("Export All Media", systemImage: "square.and.arrow.up")
-            }
+            NavigationLink {
+                BackupView()
+            } label: {
+                HStack {
+                    Label("Backup & Restore", systemImage: "externaldrive.fill")
 
-            Button(action: { showingBackupSheet = true }) {
-                Label("Create Backup", systemImage: "externaldrive.fill")
-            }
+                    Spacer()
 
-            Button(action: {}) {
-                Label("Restore from Backup", systemImage: "arrow.clockwise")
+                    if let lastBackup = BackupService.shared.listAvailableBackups().first {
+                        Text(lastBackup.date.formatted(date: .abbreviated, time: .omitted))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
         }
         .sheet(isPresented: $showingExportSheet) {
@@ -519,6 +523,8 @@ struct PDFExportView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.managedObjectContext) private var viewContext
 
+    @StateObject private var pdfService = PDFExportService.shared
+
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \LovedOne.name, ascending: true)]
     )
@@ -528,8 +534,12 @@ struct PDFExportView: View {
     @State private var startDate = Calendar.current.date(byAdding: .year, value: -1, to: Date())!
     @State private var endDate = Date()
     @State private var includePhotos = true
+    @State private var includeVideos = true
     @State private var includeMilestones = true
-    @State private var isGenerating = false
+    @State private var showingShareSheet = false
+    @State private var generatedPDFURL: URL?
+    @State private var showingError = false
+    @State private var errorMessage = ""
 
     var body: some View {
         NavigationStack {
@@ -549,23 +559,44 @@ struct PDFExportView: View {
                 }
 
                 Section("Include") {
-                    Toggle("Photos & Videos", isOn: $includePhotos)
+                    Toggle("Photos", isOn: $includePhotos)
+                    Toggle("Videos", isOn: $includeVideos)
                     Toggle("Milestones & Events", isOn: $includeMilestones)
+                }
+
+                if pdfService.isGenerating {
+                    Section {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(pdfService.currentStep)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+
+                            ProgressView(value: pdfService.progress)
+                                .progressViewStyle(.linear)
+
+                            Text("\(Int(pdfService.progress * 100))% complete")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
 
                 Section {
                     Button(action: generatePDF) {
-                        if isGenerating {
-                            HStack {
+                        HStack {
+                            Spacer()
+                            if pdfService.isGenerating {
                                 ProgressView()
+                                    .padding(.trailing, 8)
                                 Text("Generating...")
+                            } else {
+                                Image(systemName: "doc.richtext")
+                                Text("Generate PDF")
                             }
-                        } else {
-                            Text("Generate PDF")
+                            Spacer()
                         }
                     }
-                    .frame(maxWidth: .infinity)
-                    .disabled(selectedLovedOne == nil || isGenerating)
+                    .disabled(selectedLovedOne == nil || pdfService.isGenerating)
                 }
             }
             .navigationTitle("Memory Book")
@@ -575,21 +606,56 @@ struct PDFExportView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .disabled(pdfService.isGenerating)
                 }
+            }
+            .sheet(isPresented: $showingShareSheet) {
+                if let url = generatedPDFURL {
+                    ShareSheet(items: [url])
+                }
+            }
+            .alert("Error", isPresented: $showingError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
             }
         }
     }
 
     private func generatePDF() {
         guard let lovedOne = selectedLovedOne else { return }
-        isGenerating = true
 
-        // TODO: Implement PDF generation
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            isGenerating = false
-            dismiss()
+        Task {
+            do {
+                let url = try await pdfService.generateMemoryBook(
+                    for: lovedOne,
+                    from: startDate,
+                    to: endDate,
+                    includePhotos: includePhotos,
+                    includeVideos: includeVideos,
+                    includeMilestones: includeMilestones,
+                    in: viewContext
+                )
+                generatedPDFURL = url
+                showingShareSheet = true
+            } catch {
+                errorMessage = error.localizedDescription
+                showingError = true
+            }
         }
     }
+}
+
+// MARK: - Share Sheet
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) { }
 }
 
 #Preview {

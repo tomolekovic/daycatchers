@@ -39,6 +39,8 @@ Daycatcher/
 │   │   └── EditMemoryView.swift
 │   ├── Events/                   # Events and reminders
 │   ├── Settings/                 # App settings (includes media sync UI)
+│   │   ├── SettingsView.swift    # Main settings and PDFExportView
+│   │   └── BackupView.swift      # Backup management UI
 │   ├── Capture/                  # Memory capture flows
 │   │   ├── PhotoCaptureView.swift
 │   │   ├── VideoCaptureView.swift
@@ -63,7 +65,9 @@ Daycatcher/
     ├── SearchHistoryManager.swift # Recent search history
     ├── NotificationManager.swift # UserNotifications for reminders
     ├── AITaggingService.swift    # Vision/NLP auto-tagging
-    └── DigestService.swift       # Weekly digest generation
+    ├── DigestService.swift       # Weekly digest generation
+    ├── PDFExportService.swift    # PDF memory book generation
+    └── BackupService.swift       # Backup and restore functionality
 ```
 
 ## Build Commands
@@ -183,7 +187,14 @@ Capture → MediaManager (local save) → Core Data save
    - DigestsView and DigestDetailView
    - Unread digest card on HomeView
    - Auto-generation on app launch
-8. 🔲 **Export & Backup** - PDF generation, local backup
+8. ✅ **Export & Backup** - PDF generation, local backup
+   - PDFExportService for memory book PDF generation
+   - PDF layout with cover page, table of contents, memory pages, milestones
+   - BackupService for complete data and media backup
+   - ZIP archive creation/extraction with Compression framework
+   - BackupView for backup management UI
+   - Import backup from Files app support
+   - PDFExportView with person, date range, and content filters
 9. 🔲 **Offline Mode** - Conflict resolution, sync status UI improvements
 10. 🔲 **Family Sharing** - CKShare + UICloudSharingController (not yet implemented)
 11. 🔲 **Themes & Polish** - Additional themes, animations

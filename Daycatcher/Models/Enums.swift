@@ -305,6 +305,44 @@ enum GroupingOption: String, CaseIterable, Identifiable {
     }
 }
 
+// MARK: - Backup Status
+
+enum BackupStatus: String, CaseIterable, Identifiable {
+    case none = "none"
+    case inProgress = "in_progress"
+    case completed = "completed"
+    case failed = "failed"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .none: return "No Backup"
+        case .inProgress: return "In Progress"
+        case .completed: return "Completed"
+        case .failed: return "Failed"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .none: return "externaldrive"
+        case .inProgress: return "arrow.triangle.2.circlepath"
+        case .completed: return "checkmark.circle.fill"
+        case .failed: return "exclamationmark.triangle.fill"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .none: return .gray
+        case .inProgress: return .blue
+        case .completed: return .green
+        case .failed: return .red
+        }
+    }
+}
+
 // MARK: - Season (for auto-tagging)
 
 enum Season: String, CaseIterable {

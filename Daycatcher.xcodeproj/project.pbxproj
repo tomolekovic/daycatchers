@@ -51,6 +51,9 @@
 		E01000001000000100000043 /* DigestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000043 /* DigestService.swift */; };
 		E01000001000000100000044 /* DigestsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000044 /* DigestsView.swift */; };
 		E01000001000000100000045 /* DigestDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000045 /* DigestDetailView.swift */; };
+		E01000001000000100000046 /* PDFExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000046 /* PDFExportService.swift */; };
+		E01000001000000100000047 /* BackupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000047 /* BackupService.swift */; };
+		E01000001000000100000048 /* BackupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E02000001000000100000048 /* BackupView.swift */; };
 		E0T000001000000100000001 /* EnumTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0T000002000000100000001 /* EnumTests.swift */; };
 		E0T000001000000100000002 /* MediaManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0T000002000000100000002 /* MediaManagerTests.swift */; };
 		E0T000001000000100000003 /* MediaSyncManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0T000002000000100000003 /* MediaSyncManagerTests.swift */; };
@@ -111,6 +114,9 @@
 		E02000001000000100000043 /* DigestService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DigestService.swift; sourceTree = "<group>"; };
 		E02000001000000100000044 /* DigestsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DigestsView.swift; sourceTree = "<group>"; };
 		E02000001000000100000045 /* DigestDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DigestDetailView.swift; sourceTree = "<group>"; };
+		E02000001000000100000046 /* PDFExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFExportService.swift; sourceTree = "<group>"; };
+		E02000001000000100000047 /* BackupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupService.swift; sourceTree = "<group>"; };
+		E02000001000000100000048 /* BackupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupView.swift; sourceTree = "<group>"; };
 		E03000001000000100000001 /* Daycatcher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Daycatcher.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E03000001000000100000002 /* Daycatcher.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Daycatcher.entitlements; sourceTree = "<group>"; };
 		E0T000002000000100000001 /* EnumTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnumTests.swift; sourceTree = "<group>"; };
@@ -221,12 +227,14 @@
 			isa = PBXGroup;
 			children = (
 				E02000001000000100000042 /* AITaggingService.swift */,
+				E02000001000000100000047 /* BackupService.swift */,
 				E02000001000000100000043 /* DigestService.swift */,
+				E02000001000000100000036 /* DiscoveryService.swift */,
 				E02000001000000100000012 /* MediaManager.swift */,
 				E02000001000000100000033 /* MediaSyncManager.swift */,
 				E02000001000000100000041 /* NotificationManager.swift */,
+				E02000001000000100000046 /* PDFExportService.swift */,
 				E02000001000000100000026 /* PermissionsManager.swift */,
-				E02000001000000100000036 /* DiscoveryService.swift */,
 				E02000001000000100000038 /* SearchHistoryManager.swift */,
 			);
 			path = Services;
@@ -291,6 +299,7 @@
 		E05000001000000100000014 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				E02000001000000100000048 /* BackupView.swift */,
 				E02000001000000100000025 /* SettingsView.swift */,
 			);
 			path = Settings;
@@ -471,6 +480,9 @@
 				E01000001000000100000043 /* DigestService.swift in Sources */,
 				E01000001000000100000044 /* DigestsView.swift in Sources */,
 				E01000001000000100000045 /* DigestDetailView.swift in Sources */,
+				E01000001000000100000046 /* PDFExportService.swift in Sources */,
+				E01000001000000100000047 /* BackupService.swift in Sources */,
+				E01000001000000100000048 /* BackupView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
