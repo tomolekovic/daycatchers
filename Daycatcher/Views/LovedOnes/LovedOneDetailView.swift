@@ -14,6 +14,9 @@ struct LovedOneDetailView: View {
     @State private var showingDeleteAlert = false
     @State private var captureType: MemoryType?
 
+    // Navigation state - kept at parent level to avoid lazy container issues
+    @State private var selectedMemory: Memory?
+
     enum DetailSegment: String, CaseIterable {
         case memories = "Memories"
         case events = "Events"
@@ -92,6 +95,17 @@ struct LovedOneDetailView: View {
         .task {
             // If this is a shared profile we own, ensure media is synced to share zone
             await SharingManager.shared.syncMediaForExistingShare(lovedOne: lovedOne)
+        }
+        .navigationDestination(item: $selectedMemory) { memory in
+            if memory.isAccessible {
+                MemoryDetailView(memory: memory)
+            } else {
+                ContentUnavailableView(
+                    "Memory Unavailable",
+                    systemImage: "exclamationmark.icloud",
+                    description: Text("This memory was deleted or is not available on this device.")
+                )
+            }
         }
     }
 
@@ -234,7 +248,7 @@ struct LovedOneDetailView: View {
 
         return LazyVGrid(columns: columns, spacing: 2) {
             ForEach(memories) { memory in
-                SafeMemoryNavigationLink(memory: memory) {
+                SafeMemoryNavigationLink(memory: memory, onSelect: { selectedMemory = $0 }) {
                     MemoryThumbnail(memory: memory, theme: themeManager.theme)
                 }
             }

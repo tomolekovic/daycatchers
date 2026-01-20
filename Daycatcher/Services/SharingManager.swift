@@ -26,28 +26,84 @@ final class SharingManager: ObservableObject {
             return existingShare
         }
 
-        // Create new share using NSPersistentCloudKitContainer
-        let (_, share, _) = try await persistenceController.container.share(
-            [lovedOne],
-            to: nil
-        )
+        // WORKAROUND: Detach tags from memories before sharing.
+        // Tags are global entities (many-to-many with Memory) and can be used by multiple LovedOnes.
+        // When sharing a LovedOne, Core Data traverses: LovedOne → memories → Memory → tags → Tag
+        // If a Tag is also used by a Memory from another LovedOne (not being shared), Core Data
+        // tries to assign the Tag to BOTH the private zone AND the share zone, which fails with:
+        // "Object graph corruption detected. Objects related to ... are assigned to multiple zones"
+        //
+        // By detaching tags before sharing, we prevent Tags from being included in the share.
+        // Tags will remain in the private zone, and shared memories won't have tag relationships.
+        // This is a trade-off: share participants won't see tags on memories.
+        let memories = (lovedOne.memories?.allObjects as? [Memory]) ?? []
+        var originalTags: [NSManagedObjectID: Set<Tag>] = [:]
 
-        // Configure share settings
-        share[CKShare.SystemFieldKey.title] = lovedOne.name ?? "Shared Profile"
-        share.publicPermission = .none // Only invited participants
+        for memory in memories {
+            if let tags = memory.tags as? Set<Tag>, !tags.isEmpty {
+                originalTags[memory.objectID] = tags
+                memory.tags = NSSet() // Clear tags
+            }
+        }
 
-        // Update the lovedOne's shared status
-        lovedOne.isSharedWithFamily = true
-        persistenceController.save()
+        // Save the changes so share() sees memories without tags
+        if !originalTags.isEmpty {
+            persistenceController.save()
+            print("[SharingManager] Detached tags from \(originalTags.count) memories before sharing")
+        }
 
-        // Upload media for all memories to the share zone so recipients can access them
-        let shareZoneID = share.recordID.zoneID
-        await uploadMediaToShareZone(for: lovedOne, zoneID: shareZoneID)
+        do {
+            // Create new share using NSPersistentCloudKitContainer
+            let (_, share, _) = try await persistenceController.container.share(
+                [lovedOne],
+                to: nil
+            )
 
-        // Refresh active shares
-        await refreshActiveShares()
+            // Restore tags for the owner's local view.
+            // The tags stay in the private zone, while memories are in the share zone.
+            // This cross-zone relationship works for the owner (who can see both zones),
+            // but shared recipients won't see tags (they only see the share zone).
+            if !originalTags.isEmpty {
+                for (objectID, tags) in originalTags {
+                    if let memory = try? persistenceController.viewContext.existingObject(with: objectID) as? Memory {
+                        memory.tags = tags as NSSet
+                    }
+                }
+                persistenceController.save()
+                print("[SharingManager] Restored \(originalTags.count) memory tag relationships for owner")
+            }
 
-        return share
+            // Configure share settings
+            share[CKShare.SystemFieldKey.title] = lovedOne.name ?? "Shared Profile"
+            share.publicPermission = .none // Only invited participants
+
+            // Update the lovedOne's shared status
+            lovedOne.isSharedWithFamily = true
+            persistenceController.save()
+
+            // Upload media for all memories to the share zone so recipients can access them
+            let shareZoneID = share.recordID.zoneID
+            await uploadMediaToShareZone(for: lovedOne, zoneID: shareZoneID)
+
+            // Refresh active shares
+            await refreshActiveShares()
+
+            return share
+
+        } catch {
+            // ROLLBACK: Restore tags on failure so local state is consistent
+            print("[SharingManager] Share creation failed, rolling back tag changes: \(error)")
+            if !originalTags.isEmpty {
+                for (objectID, tags) in originalTags {
+                    if let memory = try? persistenceController.viewContext.existingObject(with: objectID) as? Memory {
+                        memory.tags = tags as NSSet
+                    }
+                }
+                persistenceController.save()
+                print("[SharingManager] Rolled back \(originalTags.count) memory tag relationships")
+            }
+            throw error
+        }
     }
 
     /// Upload all media associated with a LovedOne to the share zone

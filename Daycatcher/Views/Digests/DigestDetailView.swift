@@ -12,6 +12,9 @@ struct DigestDetailView: View {
     @State private var allMemories: [Memory] = []
     @State private var isLoading = true
 
+    // Navigation state - kept at parent level to avoid lazy container issues
+    @State private var selectedMemory: Memory?
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: themeManager.theme.spacingLarge) {
@@ -48,6 +51,17 @@ struct DigestDetailView: View {
             // Filter out any inaccessible memories from our @State arrays
             highlightedMemories = highlightedMemories.filter { $0.isAccessible }
             allMemories = allMemories.filter { $0.isAccessible }
+        }
+        .navigationDestination(item: $selectedMemory) { memory in
+            if memory.isAccessible {
+                MemoryDetailView(memory: memory)
+            } else {
+                ContentUnavailableView(
+                    "Memory Unavailable",
+                    systemImage: "exclamationmark.icloud",
+                    description: Text("This memory was deleted or is not available on this device.")
+                )
+            }
         }
     }
 
@@ -141,7 +155,7 @@ struct DigestDetailView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: themeManager.theme.spacingMedium) {
                     ForEach(highlightedMemories.filter { $0.isAccessible }) { memory in
-                        SafeMemoryNavigationLink(memory: memory) {
+                        SafeMemoryNavigationLink(memory: memory, onSelect: { selectedMemory = $0 }) {
                             HighlightedMemoryCard(memory: memory, theme: themeManager.theme)
                         }
                     }
@@ -168,7 +182,7 @@ struct DigestDetailView: View {
                 GridItem(.flexible())
             ], spacing: themeManager.theme.spacingSmall) {
                 ForEach(accessibleMemories) { memory in
-                    SafeMemoryNavigationLink(memory: memory) {
+                    SafeMemoryNavigationLink(memory: memory, onSelect: { selectedMemory = $0 }) {
                         MemoryGridItem(memory: memory, theme: themeManager.theme)
                     }
                 }

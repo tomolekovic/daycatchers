@@ -36,6 +36,9 @@ struct HomeView: View {
     @State private var showLovedOnePicker = false
     @State private var pendingCaptureType: MemoryType?
 
+    // Navigation state - kept at parent level to avoid lazy container issues
+    @State private var selectedMemory: Memory?
+
     /// Filter recentMemories to only include accessible memories (avoiding Core Data faults)
     private var accessibleRecentMemories: [Memory] {
         Array(recentMemories).filter { $0.isAccessible }
@@ -88,6 +91,17 @@ struct HomeView: View {
                     if let type = pendingCaptureType {
                         captureType = type
                     }
+                }
+            }
+            .navigationDestination(item: $selectedMemory) { memory in
+                if memory.isAccessible {
+                    MemoryDetailView(memory: memory)
+                } else {
+                    ContentUnavailableView(
+                        "Memory Unavailable",
+                        systemImage: "exclamationmark.icloud",
+                        description: Text("This memory was deleted or is not available on this device.")
+                    )
                 }
             }
         }
@@ -209,8 +223,8 @@ struct HomeView: View {
 
     private var discoverySection: some View {
         VStack(alignment: .leading, spacing: themeManager.theme.spacingMedium) {
-            OnThisDayCard()
-            RediscoverCard()
+            OnThisDayCard(onMemorySelect: { selectedMemory = $0 })
+            RediscoverCard(onMemorySelect: { selectedMemory = $0 })
         }
     }
 
@@ -259,7 +273,7 @@ struct HomeView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: themeManager.theme.spacingMedium) {
                     ForEach(Array(accessibleRecentMemories.prefix(10))) { memory in
-                        SafeMemoryNavigationLink(memory: memory) {
+                        SafeMemoryNavigationLink(memory: memory, onSelect: { selectedMemory = $0 }) {
                             RecentMemoryCard(memory: memory, theme: themeManager.theme)
                         }
                     }

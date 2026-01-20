@@ -3,6 +3,7 @@ import SwiftUI
 struct CalendarTimelineView: View {
     @EnvironmentObject var themeManager: ThemeManager
     let memories: [Memory]
+    var onMemorySelect: ((Memory) -> Void)?
 
     @State private var currentDate = Date()
     @State private var selectedDate: Date?
@@ -205,7 +206,10 @@ struct CalendarTimelineView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
                             ForEach(selectedDayMemories) { memory in
-                                SafeMemoryNavigationLink(memory: memory) {
+                                SafeMemoryNavigationLink(
+                                    memory: memory,
+                                    onSelect: { onMemorySelect?($0) }
+                                ) {
                                     CalendarMemoryCard(memory: memory, theme: themeManager.theme)
                                 }
                             }

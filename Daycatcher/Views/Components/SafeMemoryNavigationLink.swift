@@ -8,29 +8,32 @@ import CoreData
 /// this device. The UI may still hold references to the Memory object, but
 /// accessing its properties would crash the app with NSObjectInaccessibleException.
 ///
-/// SafeMemoryNavigationLink checks `isAccessible` before navigating and shows
-/// an alert if the memory is no longer available.
+/// SafeMemoryNavigationLink checks `isAccessible` before triggering navigation
+/// via a callback, and shows an alert if the memory is no longer available.
+///
+/// IMPORTANT: The parent view must add `.navigationDestination(item:)` outside
+/// any lazy containers (LazyVGrid, LazyVStack, etc.) to handle the navigation.
 struct SafeMemoryNavigationLink<Label: View>: View {
     let memory: Memory
-    let destination: () -> MemoryDetailView
+    let onSelect: (Memory) -> Void
     let label: Label
 
     @State private var showingUnavailableAlert = false
-    @State private var isNavigating = false
 
     init(
         memory: Memory,
+        onSelect: @escaping (Memory) -> Void,
         @ViewBuilder label: () -> Label
     ) {
         self.memory = memory
-        self.destination = { MemoryDetailView(memory: memory) }
+        self.onSelect = onSelect
         self.label = label()
     }
 
     var body: some View {
         Button {
             if memory.isAccessible {
-                isNavigating = true
+                onSelect(memory)
             } else {
                 showingUnavailableAlert = true
             }
@@ -38,17 +41,6 @@ struct SafeMemoryNavigationLink<Label: View>: View {
             label
         }
         .buttonStyle(.plain)
-        .navigationDestination(isPresented: $isNavigating) {
-            if memory.isAccessible {
-                destination()
-            } else {
-                ContentUnavailableView(
-                    "Memory Unavailable",
-                    systemImage: "exclamationmark.icloud",
-                    description: Text("This memory was deleted or is not available on this device.")
-                )
-            }
-        }
         .alert("Memory Unavailable", isPresented: $showingUnavailableAlert) {
             Button("OK", role: .cancel) { }
         } message: {

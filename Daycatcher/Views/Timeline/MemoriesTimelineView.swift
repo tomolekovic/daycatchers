@@ -37,6 +37,9 @@ struct MemoriesTimelineView: View {
     @State private var selectedTags: Set<Tag> = []
     @State private var isSearchActive = false
 
+    // Navigation state - kept at parent level to avoid lazy container issues
+    @State private var selectedMemory: Memory?
+
     enum ViewMode: String, CaseIterable {
         case grid = "Grid"
         case calendar = "Calendar"
@@ -294,6 +297,17 @@ struct MemoriesTimelineView: View {
                 )
                 .presentationDetents([.large])
             }
+            .navigationDestination(item: $selectedMemory) { memory in
+                if memory.isAccessible {
+                    MemoryDetailView(memory: memory)
+                } else {
+                    ContentUnavailableView(
+                        "Memory Unavailable",
+                        systemImage: "exclamationmark.icloud",
+                        description: Text("This memory was deleted or is not available on this device.")
+                    )
+                }
+            }
         }
     }
 
@@ -339,7 +353,7 @@ struct MemoriesTimelineView: View {
             case .grid:
                 gridView
             case .calendar:
-                CalendarTimelineView(memories: filteredMemories)
+                CalendarTimelineView(memories: filteredMemories, onMemorySelect: { selectedMemory = $0 })
             }
         }
     }
@@ -396,7 +410,7 @@ struct MemoriesTimelineView: View {
 
         return LazyVGrid(columns: columns, spacing: 2) {
             ForEach(memories) { memory in
-                SafeMemoryNavigationLink(memory: memory) {
+                SafeMemoryNavigationLink(memory: memory, onSelect: { selectedMemory = $0 }) {
                     MemoryThumbnail(memory: memory, theme: themeManager.theme)
                 }
             }

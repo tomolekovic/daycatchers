@@ -6,6 +6,7 @@ import CoreData
 struct OnThisDayCard: View {
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.managedObjectContext) private var viewContext
+    var onMemorySelect: ((Memory) -> Void)?
 
     @State private var memories: [(year: Int, memories: [Memory])] = []
     @State private var isLoading = true
@@ -83,7 +84,10 @@ struct OnThisDayCard: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             ForEach(yearGroup.memories.prefix(5)) { memory in
-                                SafeMemoryNavigationLink(memory: memory) {
+                                SafeMemoryNavigationLink(
+                                    memory: memory,
+                                    onSelect: { onMemorySelect?($0) }
+                                ) {
                                     OnThisDayMemoryThumbnail(memory: memory, theme: themeManager.theme)
                                 }
                             }
@@ -159,6 +163,7 @@ struct OnThisDayMemoryThumbnail: View {
 struct RediscoverCard: View {
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.managedObjectContext) private var viewContext
+    var onMemorySelect: ((Memory) -> Void)?
 
     @State private var memory: Memory?
     @State private var isLoading = true
@@ -189,7 +194,10 @@ struct RediscoverCard: View {
                     .frame(maxWidth: .infinity)
                     .padding()
             } else if let memory = memory, memory.isAccessible {
-                SafeMemoryNavigationLink(memory: memory) {
+                SafeMemoryNavigationLink(
+                    memory: memory,
+                    onSelect: { onMemorySelect?($0) }
+                ) {
                     RediscoverMemoryContent(memory: memory, theme: themeManager.theme)
                 }
             } else {

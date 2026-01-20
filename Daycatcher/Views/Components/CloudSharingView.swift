@@ -79,15 +79,9 @@ class CloudSharingPresenter: NSObject, ObservableObject {
                 print("[CloudSharingPresenter] Using existing share")
                 sharingController = UICloudSharingController(share: existingShare, container: cloudKitContainer)
             } else {
-                print("[CloudSharingPresenter] Creating new share")
-                let (_, newShare, _) = try await persistenceController.container.share(
-                    [lovedOne],
-                    to: nil
-                )
-
-                newShare[CKShare.SystemFieldKey.title] = lovedOne.name ?? "Shared Profile"
-                newShare.publicPermission = .none
-
+                print("[CloudSharingPresenter] Creating new share via SharingManager")
+                // Use SharingManager to ensure proper tag handling (detach before share, restore after)
+                let newShare = try await SharingManager.shared.getOrCreateShare(for: lovedOne)
                 print("[CloudSharingPresenter] Share created successfully")
                 sharingController = UICloudSharingController(share: newShare, container: cloudKitContainer)
             }
@@ -220,6 +214,7 @@ struct CloudSharingView: View {
         Color.clear
             .onAppear {
                 // Use the presenter to show sharing UI
+                // The onComplete callback handles dismissal when sharing finishes
                 CloudSharingPresenter.shared.presentSharing(
                     for: lovedOne,
                     existingShare: share,
@@ -227,8 +222,8 @@ struct CloudSharingView: View {
                         dismiss()
                     }
                 )
-                // Dismiss this empty sheet immediately
-                dismiss()
+                // Note: Do NOT dismiss here - wait for presenter's onComplete callback
+                // to avoid tearing down the view hierarchy while presenter is presenting
             }
     }
 }
